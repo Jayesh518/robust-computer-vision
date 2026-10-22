@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.ipynb_checkpoints/
+*.egg-info/
+.pytest_cache/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data and model weights: document how to download, do not commit
+data/*
+!data/README.md
+models/*
+!models/README.md
+*.pt
+*.pth
+*.onnx
+*.engine
+*.weights
+runs/
+wandb/
+
+# Raw media (commit only approved, small samples under docs/figures/)
+*.mp4
+*.avi
+*.mov
