@@ -1,0 +1,25 @@
+# Pinned top-level dependencies (tested on Windows 11, Python 3.13, NVIDIA RTX 3050 Laptop 4 GB).
+#
+# Install (GPU build of PyTorch comes from the PyTorch index, the rest from PyPI):
+#   python -m venv .venv
+#   .venv\Scripts\python -m pip install --index-url https://download.pytorch.org/whl/cu118 torch==2.7.1 torchvision==0.22.1
+#   .venv\Scripts\python -m pip install -r requirements.txt
+#
+# CPU-only machines (and CI) can skip the torch line: the data, corruption and statistics code does not need it.
+
+ultralytics==8.4.173      # AGPL-3.0, see README "Licenses"
+numpy>=2.0,<3
+opencv-python>=4.9
+pandas>=2.2
+pyyaml>=6.0
+matplotlib>=3.9
+pillow>=10
+scipy>=1.13
+pytest>=8
+pycocotools>=2.0.8        # official COCO scoring: cross-check and bootstrap intervals
+gdown>=5                  # ExDark download from Google Drive (scripts/download_data.py)
+
+# Training augmentation (variants A1/A2). albumentations 2.0.8 needs albucore==0.0.24 plus simsimd and stringzilla, and it
+# works with the regular opencv-python above. Install WITHOUT letting pip replace OpenCV with the headless build:
+#   pip install --no-deps albumentations==2.0.8 albucore==0.0.24
+#   pip install simsimd stringzilla pydantic

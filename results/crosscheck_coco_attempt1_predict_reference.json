@@ -1,0 +1,54 @@
+{
+  "set": "coco_val_bench1k",
+  "n_images": 1000,
+  "tolerance": 0.03,
+  "per_class": {
+    "person": {
+      "ultralytics_on_converted_labels": 0.5325955330610717,
+      "pycocotools_on_official_annotations": 0.5463241401388579,
+      "abs_diff": 0.013728607077786226
+    },
+    "cat": {
+      "ultralytics_on_converted_labels": 0.7067560694111321,
+      "pycocotools_on_official_annotations": 0.6771658672951422,
+      "abs_diff": 0.02959020211598995
+    },
+    "dog": {
+      "ultralytics_on_converted_labels": 0.7032825026320881,
+      "pycocotools_on_official_annotations": 0.6310549934388976,
+      "abs_diff": 0.07222750919319054
+    },
+    "horse": {
+      "ultralytics_on_converted_labels": 0.5614364184331893,
+      "pycocotools_on_official_annotations": 0.5681715938602844,
+      "abs_diff": 0.006735175427095119
+    },
+    "sheep": {
+      "ultralytics_on_converted_labels": 0.5533949121683348,
+      "pycocotools_on_official_annotations": 0.5830236112564573,
+      "abs_diff": 0.02962869908812249
+    },
+    "cow": {
+      "ultralytics_on_converted_labels": 0.5300609328293355,
+      "pycocotools_on_official_annotations": 0.5431831031970854,
+      "abs_diff": 0.013122170367749875
+    },
+    "car": {
+      "ultralytics_on_converted_labels": 0.3348921227057686,
+      "pycocotools_on_official_annotations": 0.3391887215530019,
+      "abs_diff": 0.004296598847233268
+    },
+    "bus": {
+      "ultralytics_on_converted_labels": 0.5351125723910094,
+      "pycocotools_on_official_annotations": 0.5243946896104774,
+      "abs_diff": 0.010717882780531984
+    },
+    "truck": {
+      "ultralytics_on_converted_labels": 0.34733322530232213,
+      "pycocotools_on_official_annotations": 0.3157063632657759,
+      "abs_diff": 0.031626862036546244
+    }
+  },
+  "worst_abs_diff": 0.07222750919319054,
+  "passed": false
+}

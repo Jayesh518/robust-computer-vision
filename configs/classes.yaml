@@ -1,0 +1,21 @@
+# Project 1 label space: 9 classes, all COCO classes, so a COCO-pretrained YOLO already knows them.
+#
+# role:
+#   primary    person. Headline results are reported for this class first.
+#   secondary  animals (pets and livestock). Reported in a second table.
+#   context    vehicles. Reported separately; used so an operator alert can say "person partly hidden near a vehicle".
+#
+# Three numberings exist and must never be mixed up:
+#   id            project id used by fine-tuned models ("proj" space)
+#   coco_index    index in the 80-class list a COCO-pretrained YOLO outputs ("coco80" space)
+#   coco_json_id  category_id inside COCO's annotation JSON files (original 1..90 numbering)
+classes:
+  - { id: 0, name: person, role: primary,   coco_index: 0,  coco_json_id: 1 }
+  - { id: 1, name: cat,    role: secondary, coco_index: 15, coco_json_id: 17 }
+  - { id: 2, name: dog,    role: secondary, coco_index: 16, coco_json_id: 18 }
+  - { id: 3, name: horse,  role: secondary, coco_index: 17, coco_json_id: 19 }
+  - { id: 4, name: sheep,  role: secondary, coco_index: 18, coco_json_id: 20 }
+  - { id: 5, name: cow,    role: secondary, coco_index: 19, coco_json_id: 21 }
+  - { id: 6, name: car,    role: context,   coco_index: 2,  coco_json_id: 3 }
+  - { id: 7, name: bus,    role: context,   coco_index: 5,  coco_json_id: 6 }
+  - { id: 8, name: truck,  role: context,   coco_index: 7,  coco_json_id: 8 }

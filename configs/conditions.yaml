@@ -1,0 +1,47 @@
+# Synthetic degradation benchmark. Three severities per condition (1 mild, 3 strong).
+# Implemented in src/rcv/corrupt.py. Formulas are documented there.
+seed_base: 20270101
+# Synthetic occlusion test (src/rcv/occlude.py): a concrete-like slab hides an exact fraction of each person's box,
+# entering from one side. It is a measurable PROXY for "partly hidden by debris or a vehicle", not a model of rubble.
+# The ground-truth box stays the full person box (the person is still there).
+occlusion:
+  fractions: [0.25, 0.5, 0.75]
+  directions: [bottom, top, left, right]
+  edge_jitter: 0.06        # roughness of the slab edge, as a fraction of the box size
+conditions:
+  low_light:
+    description: exposure drop in linear light plus signal-dependent (Poisson) and read noise
+    severities:
+      1: { exposure: 0.45, read_noise: 0.004, shot_gain: 220 }
+      2: { exposure: 0.22, read_noise: 0.008, shot_gain: 120 }
+      3: { exposure: 0.09, read_noise: 0.014, shot_gain: 60 }
+  fog:
+    description: atmospheric scattering I = J*t + A*(1-t) with a smooth random transmission map
+    severities:
+      1: { beta: 0.9, airlight: 0.85 }
+      2: { beta: 1.8, airlight: 0.88 }
+      3: { beta: 3.0, airlight: 0.9 }
+  rain:
+    description: random streaks at a slant plus slight darkening and blur
+    severities:
+      1: { density: 0.0006, length: 14, thickness: 1, alpha: 0.30 }
+      2: { density: 0.0014, length: 20, thickness: 1, alpha: 0.38 }
+      3: { density: 0.0028, length: 28, thickness: 2, alpha: 0.46 }
+  snow:
+    description: random flakes (small bright discs) plus slight brightening and haze
+    severities:
+      1: { density: 0.0007, radius: 1.5, haze: 0.06 }
+      2: { density: 0.0018, radius: 2.0, haze: 0.12 }
+      3: { density: 0.0036, radius: 2.6, haze: 0.20 }
+  motion_blur:
+    description: straight line blur kernel at a random angle
+    severities:
+      1: { length: 7 }
+      2: { length: 15 }
+      3: { length: 27 }
+  gaussian_noise:
+    description: additive Gaussian noise on [0,1] pixel values
+    severities:
+      1: { sigma: 0.04 }
+      2: { sigma: 0.08 }
+      3: { sigma: 0.14 }

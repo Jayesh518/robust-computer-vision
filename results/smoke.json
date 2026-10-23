@@ -1,0 +1,75 @@
+{
+  "note": "Smoke test only: detection counts on 2 sample images. Not an accuracy result.",
+  "environment": {
+    "python": "3.13.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "torch": "2.7.1+cu118",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_memory_mb": 4095,
+    "ultralytics": "8.4.173"
+  },
+  "detections_6_classes": [
+    {
+      "image": "bus.jpg",
+      "clean": {
+        "person": 4
+      },
+      "low_light_sev2": {
+        "person": 4
+      },
+      "fog_sev2": {
+        "person": 4
+      },
+      "rain_sev2": {
+        "person": 4
+      },
+      "snow_sev2": {
+        "person": 4
+      },
+      "motion_blur_sev2": {
+        "person": 4
+      },
+      "gaussian_noise_sev2": {
+        "person": 4
+      }
+    },
+    {
+      "image": "zidane.jpg",
+      "clean": {
+        "person": 2
+      },
+      "low_light_sev2": {
+        "person": 2
+      },
+      "fog_sev2": {
+        "person": 3
+      },
+      "rain_sev2": {
+        "person": 2
+      },
+      "snow_sev2": {
+        "person": 2
+      },
+      "motion_blur_sev2": {
+        "person": 3
+      },
+      "gaussian_noise_sev2": {
+        "person": 2
+      }
+    }
+  ],
+  "latency_batch1": {
+    "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+    "imgsz": 640,
+    "device": "cuda:0",
+    "half": true,
+    "runs": 100,
+    "mean_ms": 18.09186199985561,
+    "p50_ms": 15.989100000297185,
+    "p95_ms": 30.850524993002182,
+    "fps": 55.273470470202625,
+    "params_m": 2.62408,
+    "size_mb": 5.353702545166016
+  }
+}

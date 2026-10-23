@@ -1,0 +1,292 @@
+{
+  "note": "B0 zero-shot COCO-pretrained detector. Conditions are SYNTHETIC (degraded COCO val). Clean sets are the reference.",
+  "environment": {
+    "python": "3.13.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "torch": "2.7.1+cu118",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_memory_mb": 4095,
+    "ultralytics": "8.4.173"
+  },
+  "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+  "imgsz": 640,
+  "sets": {
+    "exdark_all": {
+      "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+      "data": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\data\\processed\\real\\exdark_all\\coco80\\coco80.yaml",
+      "split": "val",
+      "imgsz": 640,
+      "precision": 0.7641137323811991,
+      "recall": 0.6421368751213625,
+      "map50": 0.7233952363112761,
+      "map50_95": 0.40533752242636445,
+      "per_class": {
+        "person": {
+          "precision": 0.7552284546708361,
+          "recall": 0.6806970509383378,
+          "map50": 0.7434183526496834,
+          "map50_95": 0.3745779100843384
+        },
+        "car": {
+          "precision": 0.7034277627813519,
+          "recall": 0.6648445507345405,
+          "map50": 0.701973856333811,
+          "map50_95": 0.380397376340178
+        },
+        "bus": {
+          "precision": 0.8629610022764982,
+          "recall": 0.773371104815864,
+          "map50": 0.8493257011103251,
+          "map50_95": 0.5743607352566217
+        },
+        "cat": {
+          "precision": 0.7308356473014795,
+          "recall": 0.5436380738331986,
+          "map50": 0.6225707025791382,
+          "map50_95": 0.34041665490583906
+        },
+        "dog": {
+          "precision": 0.7681157948758299,
+          "recall": 0.5481335952848723,
+          "map50": 0.6996875688834228,
+          "map50_95": 0.35693493554484484
+        }
+      },
+      "save_dir": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\runs\\baseline_b0_yolo11n_real_exdark_all",
+      "roles": {
+        "primary": {
+          "classes": [
+            "person"
+          ],
+          "map50_95": 0.3745779100843384,
+          "map50": 0.7434183526496834,
+          "precision": 0.7552284546708361,
+          "recall": 0.6806970509383378
+        },
+        "secondary": {
+          "classes": [
+            "cat",
+            "dog"
+          ],
+          "map50_95": 0.348675795225342,
+          "map50": 0.6611291357312805,
+          "precision": 0.7494757210886547,
+          "recall": 0.5458858345590354
+        },
+        "context": {
+          "classes": [
+            "bus",
+            "car"
+          ],
+          "map50_95": 0.47737905579839984,
+          "map50": 0.7756497787220681,
+          "precision": 0.783194382528925,
+          "recall": 0.7191078277752023
+        }
+      },
+      "evidence": "real"
+    },
+    "dawn_fog": {
+      "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+      "data": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\data\\processed\\real\\dawn_fog\\coco80\\coco80.yaml",
+      "split": "val",
+      "imgsz": 640,
+      "precision": 0.597917795542968,
+      "recall": 0.5027380220162454,
+      "map50": 0.5131094017768251,
+      "map50_95": 0.3363511970209593,
+      "per_class": {
+        "person": {
+          "precision": 0.7403001044385433,
+          "recall": 0.6153846153846154,
+          "map50": 0.6419740050548575,
+          "map50_95": 0.3982134796740342
+        },
+        "car": {
+          "precision": 0.8724762508801506,
+          "recall": 0.5708661288677213,
+          "map50": 0.699618727017155,
+          "map50_95": 0.45099005446883034
+        },
+        "bus": {
+          "precision": 0.4680685132644338,
+          "recall": 0.4586109322676876,
+          "map50": 0.43521896098866997,
+          "map50_95": 0.3212924814013577
+        },
+        "truck": {
+          "precision": 0.3108263135887445,
+          "recall": 0.36609041154495703,
+          "map50": 0.2756259140466177,
+          "map50_95": 0.17490877253961468
+        }
+      },
+      "save_dir": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\runs\\baseline_b0_yolo11n_real_dawn_fog",
+      "roles": {
+        "primary": {
+          "classes": [
+            "person"
+          ],
+          "map50_95": 0.3982134796740342,
+          "map50": 0.6419740050548575,
+          "precision": 0.7403001044385433,
+          "recall": 0.6153846153846154
+        },
+        "secondary": {
+          "classes": [],
+          "map50_95": null,
+          "map50": null,
+          "precision": null,
+          "recall": null
+        },
+        "context": {
+          "classes": [
+            "bus",
+            "car",
+            "truck"
+          ],
+          "map50_95": 0.3157304361366009,
+          "map50": 0.47015453401748086,
+          "precision": 0.5504570259111096,
+          "recall": 0.46518915756012197
+        }
+      },
+      "evidence": "real"
+    },
+    "dawn_rain": {
+      "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+      "data": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\data\\processed\\real\\dawn_rain\\coco80\\coco80.yaml",
+      "split": "val",
+      "imgsz": 640,
+      "precision": 0.5294115022826247,
+      "recall": 0.5444075230061308,
+      "map50": 0.5269903354023876,
+      "map50_95": 0.36162000907002095,
+      "per_class": {
+        "person": {
+          "precision": 0.6474385772769523,
+          "recall": 0.8527147937717043,
+          "map50": 0.7741453765089751,
+          "map50_95": 0.5537297131456739
+        },
+        "car": {
+          "precision": 0.8523477981143055,
+          "recall": 0.5785977859778598,
+          "map50": 0.7178837784609372,
+          "map50_95": 0.45210259734574193
+        },
+        "bus": {
+          "precision": 0.18696584118563475,
+          "recall": 0.38461538461538464,
+          "map50": 0.23543021956246732,
+          "map50_95": 0.21229573777884764
+        },
+        "truck": {
+          "precision": 0.43089379255360605,
+          "recall": 0.3617021276595745,
+          "map50": 0.38050196707717077,
+          "map50_95": 0.22835198800982046
+        }
+      },
+      "save_dir": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\runs\\baseline_b0_yolo11n_real_dawn_rain",
+      "roles": {
+        "primary": {
+          "classes": [
+            "person"
+          ],
+          "map50_95": 0.5537297131456739,
+          "map50": 0.7741453765089751,
+          "precision": 0.6474385772769523,
+          "recall": 0.8527147937717043
+        },
+        "secondary": {
+          "classes": [],
+          "map50_95": null,
+          "map50": null,
+          "precision": null,
+          "recall": null
+        },
+        "context": {
+          "classes": [
+            "bus",
+            "car",
+            "truck"
+          ],
+          "map50_95": 0.29758344104480333,
+          "map50": 0.44460532170019174,
+          "precision": 0.4900691439511821,
+          "recall": 0.44163843275093967
+        }
+      },
+      "evidence": "real"
+    },
+    "dawn_snow": {
+      "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+      "data": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\data\\processed\\real\\dawn_snow\\coco80\\coco80.yaml",
+      "split": "val",
+      "imgsz": 640,
+      "precision": 0.5862294446080317,
+      "recall": 0.5192132369151218,
+      "map50": 0.5325523236249323,
+      "map50_95": 0.3511378190030194,
+      "per_class": {
+        "person": {
+          "precision": 0.8667997423619612,
+          "recall": 0.6329113924050633,
+          "map50": 0.7415864300981828,
+          "map50_95": 0.4523379380759544
+        },
+        "car": {
+          "precision": 0.8670898394534504,
+          "recall": 0.5457934071072756,
+          "map50": 0.7200255406537572,
+          "map50_95": 0.46449361572873593
+        },
+        "bus": {
+          "precision": 0.3960592475681639,
+          "recall": 0.5,
+          "map50": 0.4379429517729791,
+          "map50_95": 0.3263940966115165
+        },
+        "truck": {
+          "precision": 0.21496894904855104,
+          "recall": 0.39814814814814814,
+          "map50": 0.23065437197481004,
+          "map50_95": 0.16132562559587066
+        }
+      },
+      "save_dir": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\runs\\baseline_b0_yolo11n_real_dawn_snow",
+      "roles": {
+        "primary": {
+          "classes": [
+            "person"
+          ],
+          "map50_95": 0.4523379380759544,
+          "map50": 0.7415864300981828,
+          "precision": 0.8667997423619612,
+          "recall": 0.6329113924050633
+        },
+        "secondary": {
+          "classes": [],
+          "map50_95": null,
+          "map50": null,
+          "precision": null,
+          "recall": null
+        },
+        "context": {
+          "classes": [
+            "bus",
+            "car",
+            "truck"
+          ],
+          "map50_95": 0.3174044459787077,
+          "map50": 0.4628742881338488,
+          "precision": 0.49270601202338843,
+          "recall": 0.4813138517518079
+        }
+      },
+      "evidence": "real"
+    }
+  }
+}

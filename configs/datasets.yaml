@@ -1,0 +1,55 @@
+# Where each evaluation set comes from and how its labels map to the project label space (configs/classes.yaml).
+# `real_condition` = real photographs taken in that condition. `synthetic` = clean images degraded by src/rcv/corrupt.py
+# or occluded by src/rcv/occlude.py.
+#
+# NOT VERIFIED YET: (1) each license, (2) the exact class strings in each dataset's annotation files.
+# Check both against the downloaded files before use; a wrong string silently drops that class (see tests/test_labels.py).
+datasets:
+  coco_val_clean:
+    kind: clean
+    source: COCO val2017 (images + instances_val2017.json)
+    label_map: coco            # category ids come from classes.yaml (coco_json_id)
+    classes_available: [person, cat, dog, horse, sheep, cow, car, bus, truck]
+  coco_val_synthetic:
+    kind: synthetic
+    source: coco_val_clean degraded by src/rcv/corrupt.py and occluded by src/rcv/occlude.py (fixed seeds)
+    label_map: coco
+    classes_available: [person, cat, dog, horse, sheep, cow, car, bus, truck]
+  exdark:
+    kind: real_condition
+    condition: low_light
+    source: ExDark (Exclusively Dark image dataset)
+    use: evaluation_only            # never trained on; weights trained on it are never released
+    label_map: { People: person, Cat: cat, Dog: dog, Car: car, Bus: bus }   # other ExDark classes are ignored
+    classes_available: [person, cat, dog, car, bus]
+  rtts:
+    kind: real_condition
+    condition: haze
+    source: RTTS (RESIDE-beta real-world hazy images)
+    use: skipped                    # no license stated by the authors; see data/README.md
+    label_map: { person: person, car: car, bus: bus }
+    classes_available: [person, car, bus]
+  dawn:
+    kind: real_condition
+    condition: [fog, rain, snow]
+    source: DAWN (Detection in Adverse Weather Nature)
+    use: evaluation_only            # CC BY-NC 3.0; never trained on; weights trained on it are never released
+    label_map: { person: person, car: car, bus: bus, truck: truck }
+    classes_available: [person, car, bus, truck]
+  bdd100k_val:
+    kind: real_condition
+    condition: [night, rain, snow]
+    source: BDD100K val (weather / timeofday attributes)
+    use: evaluation                 # the BDD100K TRAIN adverse splits are used to train variant A2
+    # DECISION 2026-10-23 (made before seeing any BDD results): BDD100K labels a person on a bike as "rider", not "person".
+    # The project is about finding humans, so rider -> person. Left unmerged, a correct detection of a rider would count as an
+    # error in evaluation and, in training, would teach the model to suppress humans. "bike" and "motor" are not project classes.
+    label_map: { person: person, rider: person, car: car, bus: bus, truck: truck }
+    classes_available: [person, car, bus, truck]
+  bdd100k_train:
+    kind: real_condition
+    condition: [night, rain, snow, fog]
+    source: BDD100K train (weather / timeofday attributes)
+    use: training_only              # adverse-condition subsets train variant A2; never used for testing
+    label_map: { person: person, rider: person, car: car, bus: bus, truck: truck }
+    classes_available: [person, car, bus, truck]

@@ -1,0 +1,75 @@
+{
+  "set": "coco_val_bench1k",
+  "n_images": 1000,
+  "n_detections_same": 55434,
+  "n_detections_single": 51146,
+  "tolerance": 0.03,
+  "per_class": {
+    "person": {
+      "ultralytics_on_converted_labels": 0.5325955330610717,
+      "pycocotools_same_detections": 0.546764284630805,
+      "diff_same_detections": 0.014168751569733296,
+      "pycocotools_predict_single_label": 0.5463241401388579,
+      "diff_predict_single_label": 0.013728607077786226
+    },
+    "cat": {
+      "ultralytics_on_converted_labels": 0.7067560694111321,
+      "pycocotools_same_detections": 0.7045031036989464,
+      "diff_same_detections": 0.002252965712185695,
+      "pycocotools_predict_single_label": 0.6771658672951422,
+      "diff_predict_single_label": 0.02959020211598995
+    },
+    "dog": {
+      "ultralytics_on_converted_labels": 0.7032825026320881,
+      "pycocotools_same_detections": 0.7014435205205053,
+      "diff_same_detections": 0.001838982111582843,
+      "pycocotools_predict_single_label": 0.6310549934388976,
+      "diff_predict_single_label": 0.07222750919319054
+    },
+    "horse": {
+      "ultralytics_on_converted_labels": 0.5614364184331893,
+      "pycocotools_same_detections": 0.5618089368809819,
+      "diff_same_detections": 0.00037251844779262466,
+      "pycocotools_predict_single_label": 0.5681715938602844,
+      "diff_predict_single_label": 0.006735175427095119
+    },
+    "sheep": {
+      "ultralytics_on_converted_labels": 0.5533949121683348,
+      "pycocotools_same_detections": 0.5778010887595174,
+      "diff_same_detections": 0.024406176591182605,
+      "pycocotools_predict_single_label": 0.5830236112564573,
+      "diff_predict_single_label": 0.02962869908812249
+    },
+    "cow": {
+      "ultralytics_on_converted_labels": 0.5300609328293355,
+      "pycocotools_same_detections": 0.5497605252316634,
+      "diff_same_detections": 0.01969959240232788,
+      "pycocotools_predict_single_label": 0.5431831031970854,
+      "diff_predict_single_label": 0.013122170367749875
+    },
+    "car": {
+      "ultralytics_on_converted_labels": 0.3348921227057686,
+      "pycocotools_same_detections": 0.34353348934894223,
+      "diff_same_detections": 0.00864136664317361,
+      "pycocotools_predict_single_label": 0.3391887215530019,
+      "diff_predict_single_label": 0.004296598847233268
+    },
+    "bus": {
+      "ultralytics_on_converted_labels": 0.5351125723910094,
+      "pycocotools_same_detections": 0.5372059249035609,
+      "diff_same_detections": 0.002093352512551494,
+      "pycocotools_predict_single_label": 0.5243946896104774,
+      "diff_predict_single_label": 0.010717882780531984
+    },
+    "truck": {
+      "ultralytics_on_converted_labels": 0.34733322530232213,
+      "pycocotools_same_detections": 0.3492143061117748,
+      "diff_same_detections": 0.001881080809452651,
+      "pycocotools_predict_single_label": 0.3157063632657759,
+      "diff_predict_single_label": 0.031626862036546244
+    }
+  },
+  "worst_abs_diff_same_detections": 0.024406176591182605,
+  "worst_abs_diff_predict_single_label": 0.07222750919319054,
+  "passed": true
+}
