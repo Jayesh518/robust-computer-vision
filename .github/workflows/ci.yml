@@ -1,0 +1,18 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # The data, corruption and statistics code needs no GPU stack, so CI installs only what the tests import.
+      # (the augmentation tests skip themselves when albumentations is absent; the model-dependent test skips without weights)
+      - run: pip install "numpy>=2.0" opencv-python-headless pyyaml scipy pillow pycocotools pytest
+      - run: pytest -q
