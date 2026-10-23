@@ -6,6 +6,8 @@ How much does a pretrained YOLO detector degrade on **people** (primary) and ani
 
 The motivation is disaster response: finding people in poor conditions. Part 1 of 3 in a connected portfolio: computer vision, then ROS 2 navigation ([ros2-slam-navigation](https://github.com/jayesh518/ros2-slam-navigation)), then a physical rover ([autonomous-rescue-rover](https://github.com/jayesh518/autonomous-rescue-rover)).
 
+Project phases and status: [PHASES.md](PHASES.md).
+
 ## Scope (staged on purpose)
 **This project: single-camera RGB.** Thermal sensing, simulated thermal and any life-signs inference are later stages, not claims of this repository.
 
