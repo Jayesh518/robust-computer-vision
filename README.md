@@ -1,6 +1,6 @@
 # Robust Computer Vision Under Difficult Conditions
 
-**Status: In progress** (tooling stage; no experimental results yet)
+**Status: In progress.** Zero-shot baselines (B0) are complete for three models on synthetic and real test sets, with confidence intervals. The training pipeline is built and tested but **no model has been fine-tuned yet**, so no claim about what recovers accuracy is made here.
 
 How much does a pretrained YOLO detector degrade on **people** (primary) and animals (secondary) in low light, fog, rain, snow, motion blur, noise and partial occlusion, and which cheap intervention (fine-tuning, condition-aware augmentation, enhancement preprocessing) recovers the most accuracy per millisecond of latency?
 
@@ -16,7 +16,7 @@ The motivation is disaster response: finding people in poor conditions. Part 1 o
 | Context | `car, bus, truck` | third table; lets an alert say "person partly hidden near a vehicle" |
 
 - **Conditions:** low light, fog, rain, snow, motion blur, gaussian noise, and **partial occlusion** (a synthetic concrete-like slab hiding 25 / 50 / 75 % of a person's box).
-- **Model:** `yolo11n` (and `yolo11s` if VRAM allows), 640 px, on an RTX 3050 Laptop GPU (4 GB).
+- **Models:** `yolo11n` is the primary model (fits 4 GB for fine-tuning, fast enough for a small rover); `yolo11s` and `yolo26n` are evaluated zero-shot for comparison. 640 px, RTX 3050 Laptop GPU (4 GB).
 
 ## What this can and cannot say
 - A 2D camera cannot distinguish "under" from "in front of" or "behind". The most this project can support is wording like *"person detected, partly hidden, overlapping a vehicle"*, always for a human to verify.
@@ -28,24 +28,28 @@ Every reported number will be labelled accordingly.
 
 | Evidence | Classes | Type |
 |---|---|---|
-| ExDark (low light) | person, cat, dog, car, bus | real photographs |
-| RTTS (haze) | person, car, bus | real photographs |
-| DAWN (fog, rain, snow) | person, car, bus, truck | real photographs |
-| BDD100K (night, rain, snow tags) | person, car, bus, truck | real photographs |
+| ExDark (low light) | person, cat, dog, car, bus | real photographs, **test-only** |
+| DAWN (fog, rain, snow) | person, car, bus, truck | real photographs, **test-only** (very few person boxes) |
+| BDD100K val (night, rain, snow; clear day as reference) | person (rider mapped to person), car, bus, truck | real photographs; only 13 foggy images |
+| RTTS (haze) | - | **skipped**: no license stated by the authors |
 | COCO val, degraded by `src/rcv/corrupt.py` / occluded by `src/rcv/occlude.py` | all 9 | **synthetic** (simplified models, not real weather or rubble) |
 
 **Limitation:** no public dataset provides real fog/rain/snow images with animal boxes, so horse, cow and sheep (and cats and dogs outside low light) are evaluated under synthetic degradations only. Synthetic results are a controlled stress test, not a substitute for real conditions.
 
-## Experiment variants (planned)
-| ID | Description |
-|---|---|
-| B0 | Pretrained, zero-shot (baseline) |
-| B1 | Fine-tuned on a clean subset only (control for the effect of fine-tuning itself) |
-| A1 | Fine-tuned with condition-aware augmentation |
-| A2 | A1 plus BDD100K adverse-condition training splits (person and vehicles only: BDD100K has no animals). ExDark and DAWN are test-only. |
-| E1 | Enhancement preprocessing (low-light, dehaze, derain) + B0, measuring accuracy gain vs added latency |
+## Experiment variants
+| ID | Description | Status |
+|---|---|---|
+| B0 | Pretrained, zero-shot (baseline), three models | **done** (see Results) |
+| B1 | Fine-tuned on a clean COCO subset only: the control that separates "fine-tuning on this label set" from "learning robustness" | pipeline built, **not trained** |
+| A1 | B1 plus condition-aware augmentation (each image degraded with probability 0.5 by the same generator as the synthetic tests) | pipeline built, **not trained** |
+| A2 | A1 plus a BDD100K adverse-condition subset (fog, rain, snow, night; person and vehicles only, BDD has no animals). ExDark and DAWN stay test-only. | pipeline built, **not trained** |
+| E1 | Enhancement preprocessing (low-light, dehaze, derain) + B0, measuring accuracy gain vs added latency | not started |
 
-Metrics: mAP50-95, mAP50, precision, recall (per class, per condition, per severity, per occlusion level), batch-1 latency, FPS, model size. Trained variants use 3 seeds (mean +/- std) and bootstrap CIs on differences. Negative results will be reported.
+Training design: labels stay in the COCO-80 index space (the pretrained head is kept, so results compare directly with B0); a 9,831-image COCO train subset, a separate 500-image selection split (few animals in it, so a weak guide for animal classes), 3,130 BDD100K adverse images for A2; 3 seeds per variant planned.
+
+Two caveats that will accompany every A1/A2 result: (1) the training degradations and the **synthetic** test degradations come from the same generator, so gains on the synthetic sets are in-distribution and optimistic; only the **real** sets show whether they transfer; (2) A2 also has more and different data than A1, not only adverse conditions.
+
+Metrics: mAP50-95, mAP50, precision, recall (per class, per condition, per severity, per occlusion level), person found-rate, batch-1 latency, model size, 95 % bootstrap intervals. Negative results will be reported.
 
 ## Later stages (not part of this repository's claims yet)
 1. Simulated thermal camera and humans in Gazebo (Project 2), as a controlled test.
@@ -65,30 +69,17 @@ python -m venv .venv
 ## Structure
 ```
 configs/    classes.yaml (roles, label spaces), conditions.yaml (degradations, occlusion), datasets.yaml (sources, label maps)
-src/rcv/    labels.py, corrupt.py, occlude.py, stats.py, eval.py
-scripts/    smoke_test.py
-tests/      label mapping, degradation determinism/monotonicity, occlusion exactness, statistics
+src/rcv/    labels.py, data.py, corrupt.py, occlude.py, augment.py, stats.py, ci.py, eval.py
+scripts/    download_data.py, prepare_coco.py, prepare_real_sets.py, prepare_bdd.py, make_synthetic.py,
+            run_baseline.py, run_model_comparison.sh, crosscheck_coco_eval.py, measure_latency.py,
+            make_results_tables.py, prepare_train_data.py, train.py, smoke_test.py
+tests/      label mapping, parsers, degradation determinism/monotonicity, occlusion exactness, bootstrap CIs
+            (AP reproduces pycocotools), augmentation serialisation, statistics
 data/       not committed; see data/README.md for sources and licenses
 models/     not committed; see models/README.md
 results/    small, publishable summaries (JSON/CSV); smoke.json is an environment check only
 docs/       report.md (written once results exist)
 ```
-
-### B0 on REAL adverse-condition photographs (test-only sets, 2026-10-23)
-Source: `results/baseline_b0_yolo11n_real.json`. Same zero-shot `yolo11n`, same protocol. These are real photographs, not synthetic.
-
-| Set (condition) | Images | Person boxes | Person mAP50-95 | Person mAP50 | Person recall | Other classes (mAP50-95) |
-|---|---|---|---|---|---|---|
-| ExDark (low light) | 4,906 | 7,460 | **0.375** | 0.743 | 0.681 | cat 0.340 (909 boxes), dog 0.357 (1,018), car 0.380, bus 0.574 |
-| DAWN fog | 299 | 117 | **0.398** | 0.642 | 0.615 | vehicles 0.316 |
-| DAWN snow | 204 | 158 | **0.452** | 0.742 | 0.633 | vehicles 0.317 |
-| DAWN rain | 200 | **28** | 0.554 | 0.774 | 0.853 | vehicles 0.298 |
-
-How to read this, and what it does NOT show:
-- **There is no clean reference for these sets, so no "drop" can be computed.** The numbers cannot be compared with the COCO clean value (0.532): different image sources, object sizes and annotation rules. In particular ExDark and DAWN annotate only their own class lists, so an unannotated person that the detector correctly finds counts as a false positive, which lowers every score. A fair within-dataset reference (clear daytime versus night, rain, snow, fog) needs BDD100K, which is being downloaded.
-- **DAWN rain has only 28 person boxes.** Its 0.554 and 0.853 recall are not meaningful; do not quote them. DAWN is a vehicle dataset and its person counts are small everywhere (117 and 158 for fog and snow are also thin).
-- ExDark is the first **real** evidence for the secondary class: cat and dog reach about 0.35 mAP50-95 in real low light. That is a measurement of the baseline on this set, not a degradation figure.
-- Synthetic low light at severity 2 happens to score about the same (0.378) as real ExDark (0.375). That is a coincidence of magnitude between two different image sets and does not show that the synthetic model is realistic.
 
 ## Evaluation protocol, and how it was checked
 All numbers come from Ultralytics `val` (confidence 0.001, NMS IoU 0.6, 640 px, multi-label NMS, no special handling of COCO "crowd" regions). `scripts/crosscheck_coco_eval.py` re-scores the same detections with the official `pycocotools` on the original COCO annotations. On the 1000-image sample the per-class AP50-95 agrees to within 0.024 (person 0.014, sheep 0.024, cow 0.020, all others 0.009 or less); the pycocotools value is higher for the crowd-heavy classes because it ignores detections that match crowd regions. See `results/crosscheck_coco.json`.
@@ -101,33 +92,108 @@ Two things to know when reading any number here:
 Three numberings exist and are kept apart in `configs/classes.yaml`: the project id (0..8, used by fine-tuned models), the COCO 80-class index (what a COCO-pretrained model outputs) and the category id inside COCO's annotation JSON (person=1, car=3, cat=17, ...). `src/rcv/labels.py` converts between them and is unit-tested.
 
 ## Results
-### B0: zero-shot `yolo11n`, synthetic degradations (first baseline, 2026-10-23)
-Source: `results/baseline_b0_yolo11n.json` (regenerate with `scripts/make_synthetic.py` then `scripts/run_baseline.py`). **All condition results are SYNTHETIC** (degraded COCO val images, simplified models in `src/rcv/corrupt.py`), measured on a fixed 1000-image sample, with the **same images** used for the clean reference. One deterministic run: no confidence intervals yet.
+Zero-shot baseline (B0): COCO-pretrained detectors, no fine-tuning. Everything below is generated from `results/b0_<model>.json` by
+`scripts/make_results_tables.py`; no number is copied by hand. Reproduce: `scripts/make_synthetic.py`, `scripts/prepare_real_sets.py`,
+`scripts/prepare_bdd.py`, then `scripts/run_model_comparison.sh` and `scripts/make_results_tables.py --update-readme`.
 
-Person (primary class), mAP50-95. Clean reference: **0.532**.
+<!-- RESULTS:START (generated by scripts/make_results_tables.py) -->
+Models evaluated zero-shot: yolo11n, yolo11s, yolo26n. Intervals are 95 % bootstrap CIs (images resampled, 200 draws). Evidence labels: **synthetic** = degraded COCO val images; **real** = genuine photographs; **clean** = reference.
 
-| Condition | severity 1 | severity 2 | severity 3 |
+### Model comparison on clean images (COCO val, 1000-image sample; mAP50-95)
+
+| Model | Person (primary) | Animals (secondary, macro) | Vehicles (context, macro) | Latency batch 1 |
+|---|---|---|---|---|
+| yolo11n | 0.532 [0.509, 0.551] | 0.612 [0.575, 0.660] | 0.408 [0.363, 0.475] | 16.1 ms median (2.6 M params) |
+| yolo11s | 0.594 [0.573, 0.611] | 0.678 [0.645, 0.722] | 0.517 [0.465, 0.577] | 16.4 ms median (9.5 M params) |
+| yolo26n | 0.528 [0.507, 0.547] | 0.637 [0.600, 0.682] | 0.440 [0.388, 0.496] | 22.0 ms median (2.6 M params) |
+
+### Synthetic degradation, strongest severity (s3): person mAP50-95 and drop from clean
+
+Severities are my own settings (`configs/conditions.yaml`): compare a condition with itself across models, not one condition against another.
+
+| Condition (synthetic) | yolo11n: s3 (drop) | yolo11s: s3 (drop) | yolo26n: s3 (drop) |
 |---|---|---|---|
-| low light | 0.475 | 0.378 | 0.147 |
-| fog | 0.507 | 0.469 | 0.392 |
-| rain | 0.504 | 0.460 | 0.215 |
-| snow | 0.514 | 0.477 | 0.407 |
-| motion blur | 0.434 | 0.274 | 0.143 |
-| gaussian noise | 0.502 | 0.442 | 0.333 |
+| low light | 0.150 (-0.382) | 0.207 (-0.386) | 0.155 (-0.373) |
+| fog | 0.393 (-0.139) | 0.496 (-0.098) | 0.411 (-0.116) |
+| rain | 0.218 (-0.314) | 0.341 (-0.252) | 0.232 (-0.295) |
+| snow | 0.408 (-0.124) | 0.498 (-0.096) | 0.414 (-0.113) |
+| motion blur | 0.147 (-0.386) | 0.188 (-0.406) | 0.147 (-0.381) |
+| gaussian noise | 0.335 (-0.197) | 0.422 (-0.172) | 0.357 (-0.171) |
 
-Reading this correctly:
-- Severities are **my own parameter choices** (`configs/conditions.yaml`). "Rain s3" versus "fog s3" says nothing about real rain versus real fog; only the trend within a condition is meaningful. The first real-condition tests (ExDark, DAWN, BDD100K) are still to come.
-- Animals (secondary) fall faster than people at strong severities (for example rain s3: animals 0.049, person 0.215), but animals have far fewer instances in the sample, so treat that as a lead, not a finding, until bootstrap intervals exist.
+### yolo11n: person mAP50-95 by condition and severity (synthetic), with CIs
 
-### Occlusion (concrete-like slab hides part of each person's box; 500 images, every person at least 40 px)
-| Hidden fraction | mAP50-95 | mAP50 |
+| Condition | clean | s1 | s2 | s3 |
+|---|---|---|---|---|
+| low light | 0.532 [0.509, 0.551] | 0.475 [0.455, 0.494] | 0.379 [0.359, 0.398] | 0.150 [0.136, 0.166] |
+| fog | 0.532 [0.509, 0.551] | 0.507 [0.485, 0.526] | 0.469 [0.448, 0.487] | 0.393 [0.375, 0.413] |
+| rain | 0.532 [0.509, 0.551] | 0.504 [0.482, 0.523] | 0.460 [0.442, 0.479] | 0.218 [0.201, 0.234] |
+| snow | 0.532 [0.509, 0.551] | 0.514 [0.493, 0.533] | 0.477 [0.457, 0.495] | 0.408 [0.389, 0.429] |
+| motion blur | 0.532 [0.509, 0.551] | 0.434 [0.413, 0.454] | 0.276 [0.256, 0.294] | 0.147 [0.133, 0.162] |
+| gaussian noise | 0.532 [0.509, 0.551] | 0.502 [0.480, 0.520] | 0.442 [0.423, 0.460] | 0.335 [0.315, 0.352] |
+
+### Occlusion (synthetic slab hides part of each person's box; 500 images, all persons at least 40 px)
+
+The strict score uses the person's FULL box as ground truth, but a detector boxes what it can SEE, so it falls even when the person is found. The **found rate** (a detection of a person at confidence 0.25 or more overlapping the full box with the stated IoU) is the lenient measure for "was a person detected there at all?".
+
+| Model | Hidden | mAP50-95 | mAP50 | found IoU>=0.1 | found IoU>=0.3 | found IoU>=0.5 |
+|---|---|---|---|---|---|---|
+| yolo11n | 0 % | 0.721 [0.699, 0.747] | 0.924 | 0.950 [0.935, 0.965] | 0.913 [0.894, 0.933] | 0.885 [0.863, 0.909] |
+| yolo11n | 25 % | 0.372 [0.353, 0.395] | 0.805 | 0.882 [0.860, 0.909] | 0.817 [0.788, 0.850] | 0.751 [0.718, 0.787] |
+| yolo11n | 50 % | 0.064 [0.057, 0.073] | 0.286 | 0.761 [0.727, 0.796] | 0.642 [0.604, 0.688] | 0.345 [0.313, 0.382] |
+| yolo11n | 75 % | 0.047 [0.042, 0.060] | 0.080 | 0.431 [0.393, 0.472] | 0.116 [0.092, 0.141] | 0.078 [0.059, 0.100] |
+| yolo11s | 0 % | 0.772 [0.755, 0.794] | 0.950 | 0.960 [0.945, 0.973] | 0.943 [0.923, 0.960] | 0.919 [0.899, 0.940] |
+| yolo11s | 25 % | 0.388 [0.370, 0.412] | 0.814 | 0.901 [0.879, 0.924] | 0.846 [0.818, 0.875] | 0.777 [0.745, 0.811] |
+| yolo11s | 50 % | 0.060 [0.053, 0.070] | 0.304 | 0.809 [0.781, 0.837] | 0.687 [0.651, 0.725] | 0.382 [0.348, 0.417] |
+| yolo11s | 75 % | 0.039 [0.033, 0.047] | 0.066 | 0.516 [0.478, 0.556] | 0.112 [0.092, 0.134] | 0.068 [0.052, 0.087] |
+| yolo26n | 0 % | 0.729 [0.705, 0.754] | 0.927 | 0.951 [0.936, 0.967] | 0.914 [0.892, 0.935] | 0.885 [0.862, 0.911] |
+| yolo26n | 25 % | 0.374 [0.358, 0.396] | 0.807 | 0.888 [0.865, 0.913] | 0.817 [0.784, 0.851] | 0.744 [0.711, 0.782] |
+| yolo26n | 50 % | 0.079 [0.072, 0.089] | 0.313 | 0.759 [0.729, 0.793] | 0.647 [0.612, 0.690] | 0.362 [0.328, 0.398] |
+| yolo26n | 75 % | 0.068 [0.055, 0.080] | 0.099 | 0.441 [0.401, 0.482] | 0.123 [0.102, 0.146] | 0.091 [0.072, 0.112] |
+
+### REAL photographs (test-only): person mAP50-95, with person-box counts
+
+BDD100K rows give the drop against the BDD **clear-daytime** reference (different images, so the interval comes from independent resampling). ExDark and DAWN have no clean reference, so no drop can be computed for them. Sets with few person boxes carry wide intervals: read the interval, not the point.
+
+| Set (condition) | Person boxes | yolo11n | yolo11s | yolo26n | Drop vs reference (yolo11n) |
+|---|---|---|---|---|---|
+| ExDark (low light) | 7460 | 0.376 [0.366, 0.386] | 0.406 [0.397, 0.417] | 0.376 [0.366, 0.386] | - |
+| DAWN fog | 117 | 0.399 [0.309, 0.492] | 0.486 [0.399, 0.563] | 0.388 [0.302, 0.481] | - |
+| DAWN rain | 28 | 0.554 [0.426, 0.688] | 0.544 [0.409, 0.675] | 0.517 [0.373, 0.653] | - |
+| DAWN snow | 158 | 0.453 [0.393, 0.528] | 0.515 [0.454, 0.588] | 0.468 [0.406, 0.545] | - |
+| BDD clear day (reference) | 2624 | 0.198 [0.184, 0.213] | 0.263 [0.246, 0.278] | 0.198 [0.184, 0.215] | - |
+| BDD clear night | 2328 | 0.149 [0.136, 0.164] | 0.191 [0.179, 0.206] | 0.142 [0.130, 0.156] | +0.049 [+0.031, +0.070] |
+| BDD rainy day | 565 | 0.197 [0.173, 0.225] | 0.236 [0.213, 0.267] | 0.192 [0.167, 0.221] | +0.001 [-0.029, +0.029] |
+| BDD snowy day | 708 | 0.223 [0.195, 0.254] | 0.296 [0.265, 0.330] | 0.220 [0.193, 0.251] | -0.026 [-0.056, +0.004] |
+| BDD rainy night (vs clear night) | 235 | 0.109 [0.078, 0.154] | 0.127 [0.094, 0.173] | 0.107 [0.079, 0.152] | +0.040 [-0.014, +0.073] |
+| BDD snowy night (vs clear night) | 288 | 0.157 [0.113, 0.208] | 0.206 [0.163, 0.258] | 0.160 [0.114, 0.213] | -0.009 [-0.063, +0.035] |
+| BDD foggy (13 images) | 5 | 0.146 [0.006, 0.315] | 0.087 [0.035, 0.132] | 0.171 [0.045, 0.303] | - |
+
+### REAL low light (ExDark): the other classes, macro mAP50-95 (cat and dog are the only real-photo animal evidence)
+
+| Model | Animals: cat, dog | Vehicles: car, bus |
 |---|---|---|
-| 0 (reference) | 0.722 | 0.924 |
-| 25 % | 0.373 | 0.805 |
-| 50 % | 0.063 | 0.286 |
-| 75 % | 0.047 | 0.080 |
+| yolo11n | 0.350 [0.334, 0.369] | 0.477 [0.464, 0.492] |
+| yolo11s | 0.402 [0.387, 0.421] | 0.520 [0.506, 0.533] |
+| yolo26n | 0.361 [0.347, 0.379] | 0.491 [0.478, 0.504] |
 
-**Do not read this as "the detector fails at 50 % occlusion".** The ground truth is the person's **full** box, but a detector draws a box around what it can **see**. Once half the box is hidden, even a perfect detection of the visible half has IoU of about 0.5 with the full box, so mAP50-95 collapses even though the person was found (mAP50 at 25 % stays at 0.805 while mAP50-95 halves). For the rescue question "was a person found at all?", a lenient overlap threshold (for example IoU 0.1 to 0.3) is the right measure. **That metric is the next thing to add**; until it exists the occlusion numbers above only show localisation degrading.
+<!-- RESULTS:END -->
+
+### Findings and caveats
+**What the data show** (zero-shot models, nothing fine-tuned; person is the primary class; intervals are in the tables above)
+
+1. **Under my synthetic settings, low light and motion blur hurt most.** At the strongest severity, person mAP50-95 falls by 0.37 to 0.41 for all three models, by 0.25 to 0.31 for rain, 0.17 to 0.20 for noise, and 0.10 to 0.14 for fog and snow. Within each condition the decline is steady and the intervals for the three severities separate. The ranking *between* conditions depends on my severity choices and says nothing about real weather.
+2. **A bigger model raises scores but does not remove the low-light and motion-blur loss.** yolo11s is +0.06 better on clean person mAP50-95 (0.594 vs 0.532), yet its strongest-severity drops for low light (-0.386 vs -0.382) and motion blur (-0.406 vs -0.386) are no smaller than yolo11n's. Whether the model-to-model differences in drop are real was not tested.
+3. **On real photographs, night is the only condition with a clear measured effect, and synthetic rain overstates what BDD100K shows.** For yolo11n, BDD100K person mAP50-95 is 0.198 in clear daytime and 0.149 at clear night: a drop of 0.049 [0.031, 0.070]. Daytime rain (+0.001 [-0.029, +0.029]) and snow (-0.026 [-0.056, +0.004]) show no detectable drop, and rainy or snowy night is not distinguishable from clear night. Strongest synthetic rain costs 0.31. Possible reasons, **not separated here**: my synthetic rain is far harsher than typical BDD rain; BDD accuracy is already low (0.198, small distant pedestrians), leaving little room to fall; BDD weather tags are per video, not per frame. Do not use the synthetic severities to predict real-world loss.
+4. **A partly hidden person is usually still found, even when the strict score collapses.** yolo11n at 50 % of the box hidden: mAP50-95 falls from 0.721 to 0.064, but a person is still found (IoU >= 0.1, confidence >= 0.25) in 0.761 [0.727, 0.796] of cases versus 0.950 unoccluded. At 75 % hidden only 0.431 [0.393, 0.472] are found, mostly with loose overlap (IoU >= 0.3: 0.116). yolo11s finds more at 75 % (0.516 [0.478, 0.556]). The found rate ignores false alarms and counts any overlapping detection, so it is an optimistic measure of detection, not of correct localisation.
+5. **Model choice, and a result that weakens my earlier reasoning.** On this GPU (forward pass only, batch 1) yolo11s costs 16.4 ms median against 16.1 ms for yolo11n, and yolo26n costs 22.0 ms: small models are launch-overhead bound here. `yolo11n` stays the model for fine-tuning because it fits 4 GB comfortably (training speed not yet measured), but for accuracy per millisecond at inference `yolo11s` looks better on this hardware. That ranking may differ on a rover's embedded computer, and the latency excludes image decoding and post-processing.
+6. **yolo26n** (end-to-end, no NMS) matches yolo11n on person (0.528 vs 0.532 clean), is slower here, and shows no advantage.
+
+**What these results cannot say**
+- **Nothing here shows what recovers accuracy.** No model has been fine-tuned: B1, A1, A2 and E1 are pending.
+- **Animals:** the synthetic sample has only 71 to 130 boxes per animal class, so those results are noisy. The only real-photo animal evidence is cat and dog in ExDark low light (macro 0.350 [0.334, 0.369] for yolo11n) and it has no clean reference, so it gives no degradation figure.
+- **No clean reference** exists for ExDark or DAWN, so no drop can be computed for them. DAWN has very few person boxes (28 in rain) and wide intervals. BDD100K has only 13 foggy images, so apart from DAWN's 117 person boxes there is no real-fog evidence.
+- **Data caveats:** the BDD100K files failed the md5 published in its docs (the mirror's packaging differs), so their authenticity is not independently verified; BDD `rider` is mapped to `person`. Each dataset labels only its own classes, so a person the detector correctly finds but the authors did not label counts as a false positive, lowering every real-set score.
+- **Synthetic degradations are simplified models,** not real weather, and training/test degradations will share one generator, so future synthetic gains will be in-distribution.
 
 ## Licenses and attribution
 - **Ultralytics YOLO code and weights are AGPL-3.0.** Fine for this research; relevant if the code is reused commercially.

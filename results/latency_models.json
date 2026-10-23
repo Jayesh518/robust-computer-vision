@@ -1,0 +1,50 @@
+{
+  "yolo11n": {
+    "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11n.pt",
+    "imgsz": 640,
+    "device": "cuda:0",
+    "half": true,
+    "runs": 200,
+    "mean_ms": 16.866,
+    "p50_ms": 16.108,
+    "p95_ms": 22.729,
+    "fps": 59.292,
+    "params_m": 2.624,
+    "size_mb": 5.354
+  },
+  "yolo11s": {
+    "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo11s.pt",
+    "imgsz": 640,
+    "device": "cuda:0",
+    "half": true,
+    "runs": 200,
+    "mean_ms": 17.111,
+    "p50_ms": 16.399,
+    "p95_ms": 22.35,
+    "fps": 58.443,
+    "params_m": 9.459,
+    "size_mb": 18.419
+  },
+  "yolo26n": {
+    "weights": "C:\\Users\\jayes\\Desktop\\masters\\robust-computer-vision\\models\\yolo26n.pt",
+    "imgsz": 640,
+    "device": "cuda:0",
+    "half": true,
+    "runs": 200,
+    "mean_ms": 22.995,
+    "p50_ms": 22.018,
+    "p95_ms": 29.742,
+    "fps": 43.488,
+    "params_m": 2.572,
+    "size_mb": 5.288
+  },
+  "environment": {
+    "python": "3.13.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "torch": "2.7.1+cu118",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_memory_mb": 4095,
+    "ultralytics": "8.4.173"
+  }
+}
