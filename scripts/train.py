@@ -68,6 +68,7 @@ def main() -> None:
     ap.add_argument("--lrf", type=float, default=None, help="final lr as a fraction of lr0")
     ap.add_argument("--freeze", type=int, default=None, help="freeze the first N layers (10 = the whole backbone)")
     ap.add_argument("--warmup-epochs", type=float, default=None)
+    ap.add_argument("--lock-bn", action="store_true", help="diagnosis: keep every BatchNorm layer in eval mode so its running statistics stay at the pretrained values")
     ap.add_argument("--plain-aug", action="store_true", help="diagnosis: no mosaic/colour/geometric augmentation at all")
     args = ap.parse_args()
 
@@ -93,6 +94,15 @@ def main() -> None:
     print(f"== training {name}: {kwargs['data']} | augmentation: {'condition-aware p=%.2f' % args.p_degrade if 'augmentations' in kwargs else 'default only'}", flush=True)
 
     model = YOLO(args.weights)
+    if args.lock_bn:
+        import torch.nn as nn
+
+        def _lock_bn(trainer):  # fires after the trainer has called model.train(), so the eval() sticks (on_train_epoch_start fires BEFORE it)
+            for m in trainer.model.modules():
+                if isinstance(m, nn.BatchNorm2d):
+                    m.eval()
+
+        model.add_callback("on_train_batch_start", _lock_bn)
     model.train(**kwargs)
 
     best = ROOT / "runs" / "train" / name / "weights" / "best.pt"

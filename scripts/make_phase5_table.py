@@ -18,8 +18,10 @@ SETS = [("clean_bench1k", "clean COCO"), ("low_light_s3", "low light s3 (synth.)
 RUNS = [("B0 zero-shot", "b0_yolo11n.json", "pretrained, nothing trained"),
         ("D0 lr ~0, 3 epochs", "ft_D0_null_lr.json", "training path with essentially no learning"),
         ("D3 lr ~0, no augmentation", "ft_D3_null_plain.json", "same, and no mosaic/colour/geometry augmentation"),
+        ("D5 lr ~0, batch-norm locked", "ft_D5_null_lockbn.json", "same as D0 but every BatchNorm layer kept at the pretrained statistics"),
         ("D1 lr 2e-5", "ft_D1_lr2e-5.json", "AdamW at 1/6 of the automatic rate"),
         ("D2 frozen backbone", "ft_D2_freeze_backbone.json", "first 10 layers frozen"),
+        ("D4 original recipe, batch-norm locked", "ft_D4_lockbn.json", "original clean-control recipe with every BatchNorm layer locked"),
         ("B1 original (seed 0)", "ft_B1_yolo11n_s0.json", "original clean-control recipe"),
         ("A1 original (seed 0)", "ft_A1_yolo11n_s0.json", "original recipe + condition-aware augmentation")]
 

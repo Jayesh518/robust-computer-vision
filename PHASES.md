@@ -9,7 +9,7 @@ Standard shape: see the workspace `docs/phases.md`. Status date: 2026-10-24.
 | 2. Pipeline and validation | Label mapping, deterministic degradations and occlusion, Ultralytics evaluation, bootstrap intervals, found-rate; cross-checked against pycocotools; 117 tests; CI | **done** |
 | 3. Baseline (B0) | yolo11n, yolo11s, yolo26n zero-shot on 35 sets each, with intervals and latency | **done** |
 | 4. Intervention (B1, A1, A2) | Clean fine-tune control, condition-aware augmentation, plus BDD100K adverse data; yolo11n, 10 epochs, 3 seeds each | **done** (first recipe) |
-| 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning control (D0), no-augmentation control (D3), lower learning rate (D1), frozen backbone (D2) | **done, gate not fully met**: about half the loss comes from the training path itself, none of the recipes removed the rest; causes still unexplained are listed in the README |
+| 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, gate met in part**: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
 | 6. Extension (E1) | Enhancement preprocessing (low-light, dehaze, derain) before the zero-shot model, reporting accuracy gain against added latency | **next** |
 | 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | planned |
 
@@ -33,3 +33,12 @@ D0 (learning rate about zero, 3 epochs) scored clean 0.521, ExDark 0.363, rain s
 
 ### Phase 5 outcome (2026-10-24)
 No recipe met the pre-registered pass rule, so no recipe was re-run over three seeds. Closed with open items: exact cause of the no-learning loss (batch-norm statistics suspected, untested), effect of more training data, effect of the 9-class label restriction. Details and table in the README.
+
+### Phase 5c plan (written 2026-10-24, before any result; reopens phase 5 to test the batch-norm explanation)
+Source check (ultralytics 8.4.173): the trainer calls `model.train()` every epoch, which re-estimates every BatchNorm layer's running statistics on the training batches (momentum 0.03) even at a near-zero learning rate. `freeze=10` only locks the backbone's statistics, so D2 was a partial test. A callback on `on_train_epoch_start` would be undone (it fires before `model.train()`), so the lock is applied on `on_train_batch_start`.
+- **D5** (learning rate about zero + all BatchNorm locked, 3 epochs). Prediction: if drift is the whole no-learning loss, D5 matches B0. **Confirmed** if its clean and ExDark scores are within 0.005 of B0 (0.532, 0.376).
+- **D4** (original clean-control recipe + all BatchNorm locked, 10 epochs). **Fixes the control** if clean is within 0.01 of B0 and ExDark is not below B0.
+- If D5 is confirmed and D4 fixes the control, B1/A1/A2 are re-run with the lock over 3 seeds (about 7 hours). If D5 is not confirmed, the batch-norm explanation is rejected and the open items stay open.
+
+### Phase 5c outcome (2026-10-24)
+D5 (learning rate about zero + batch-norm locked) matched zero-shot (clean 0.529 vs 0.532, ExDark 0.381 vs 0.376, the latter just inside the 0.005 tolerance): batch-norm drift explains the loss without learning. D4 (original recipe + lock) did not fix the control (clean 0.515, ExDark 0.370, low light s3 0.127), so by the rule written beforehand the variants were not re-run. Still open: effect of more training data, effect of the 9-class label restriction, and whether a batch-norm-locked A1 beats zero-shot on real photographs (not run).
