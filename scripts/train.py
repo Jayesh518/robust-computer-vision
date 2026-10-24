@@ -36,16 +36,19 @@ from rcv.augment import ConditionAwareDegradation  # noqa: E402
 TRAIN = ROOT / "data" / "processed" / "train"
 
 
-def make_yaml(variant: str) -> Path:
+def make_yaml(variant: str, train_list: str | None = None, tag: str | None = None) -> Path:
     train_dirs = [TRAIN / "coco_train_subset" / "coco80" / "images"]
     if variant == "A2":
         train_dirs.append(TRAIN / "bdd_adverse_train" / "coco80" / "images")
     for d in train_dirs + [TRAIN / "coco_trainval_subset" / "coco80" / "images"]:
         if not d.is_dir():
             sys.exit(f"missing training data: {d} (run scripts/prepare_train_data.py)")
-    cfg = {"path": str(TRAIN), "train": [str(d) for d in train_dirs],
+    train_entries = [str(d) for d in train_dirs] if not train_list else [str(Path(train_list).resolve())]   # a manifest .txt replaces the base folder
+    if train_list and variant == "A2":
+        train_entries.append(str(train_dirs[1]))
+    cfg = {"path": str(TRAIN), "train": train_entries,
            "val": str(TRAIN / "coco_trainval_subset" / "coco80" / "images"), "names": data.space_names("coco80")}
-    out = TRAIN / f"train_{'A2' if variant == 'A2' else 'coco'}.yaml"
+    out = TRAIN / (f"train_{tag}.yaml" if tag else f"train_{'A2' if variant == 'A2' else 'coco'}.yaml")
     out.write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
     return out
 
@@ -68,6 +71,9 @@ def main() -> None:
     ap.add_argument("--lrf", type=float, default=None, help="final lr as a fraction of lr0")
     ap.add_argument("--freeze", type=int, default=None, help="freeze the first N layers (10 = the whole backbone)")
     ap.add_argument("--warmup-epochs", type=float, default=None)
+    ap.add_argument("--momentum", type=float, default=None, help="optimizer momentum / Adam beta1 (the automatic AdamW choice uses 0.9)")
+    ap.add_argument("--cos-lr", action="store_true", help="cosine learning-rate decay instead of linear")
+    ap.add_argument("--train-list", default=None, help="phase 8: text manifest of training images (replaces the default training folder)")
     ap.add_argument("--lock-bn", action="store_true", help="diagnosis: keep every BatchNorm layer in eval mode so its running statistics stay at the pretrained values")
     ap.add_argument("--plain-aug", action="store_true", help="diagnosis: no mosaic/colour/geometric augmentation at all")
     args = ap.parse_args()
@@ -76,10 +82,14 @@ def main() -> None:
 
     model_tag = Path(args.weights).stem
     name = args.name or f"{args.variant}_{model_tag}_s{args.seed}"
-    kwargs = dict(data=str(make_yaml(args.variant)), epochs=args.epochs, imgsz=args.imgsz, batch=args.batch,
+    kwargs = dict(data=str(make_yaml(args.variant, args.train_list, name)), epochs=args.epochs, imgsz=args.imgsz, batch=args.batch,
                   seed=args.seed, deterministic=True, workers=args.workers, amp=True, plots=False, val=True,
                   warmup_epochs=1, close_mosaic=3, project=str(ROOT / "runs" / "train"), name=name, exist_ok=True,
                   fraction=args.fraction, device=0)
+    if args.momentum is not None:
+        kwargs["momentum"] = args.momentum
+    if args.cos_lr:
+        kwargs["cos_lr"] = True
     for key in ("optimizer", "lr0", "lrf", "freeze"):
         if getattr(args, key) is not None:
             kwargs[key] = getattr(args, key)

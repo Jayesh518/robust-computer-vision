@@ -1,0 +1,38 @@
+# Phase 8 fine-tuning sweep: ONE source of truth for the grid (see PHASES.md for the pre-registered plan).
+# Every setting differs from the baseline by exactly the arguments listed under it.
+#
+# baseline recipe: A1 (condition-aware augmentation p=0.5), yolo11n, 10 epochs, the 9,831-image COCO subset, AdamW lr 0.000119 with
+# momentum 0.9 (this is exactly what Ultralytics' automatic optimizer chose in the earlier A1 runs, written out so it is explicit),
+# nothing frozen, batch 16, BatchNorm unlocked, close_mosaic 3 (mosaic is switched off for the last 3 epochs, also in short and long runs).
+#
+# Known confounds, to be stated wherever the results are read:
+#   * data size at a fixed number of epochs also changes the number of gradient steps (2k = one fifth of the baseline steps);
+#   * epochs 5 / 30 change how many epochs run with mosaic (close_mosaic is fixed at 3);
+#   * freezing layers also freezes their BatchNorm statistics (Ultralytics puts frozen layers' BatchNorm in eval mode).
+
+variant: A1
+base_args: "--optimizer AdamW --lr0 0.000119 --momentum 0.9 --epochs 10"
+eval_sets: [clean_bench1k, low_light_s3, rain_s3, occ_f50, exdark_all, dawn_fog, bdd_clear_day, bdd_night_clear]
+manifests: data/processed/train/manifests
+
+settings:
+  # learning rate (AdamW); lr_1.2e-4 is the explicit replicate of the baseline and must agree with the earlier A1 runs
+  - {name: "lr_2e-5",   group: lr,       level: "2e-5",   args: "--lr0 0.00002"}
+  - {name: "lr_6e-5",   group: lr,       level: "6e-5",   args: "--lr0 0.00006"}
+  - {name: "lr_1.2e-4", group: lr,       level: "1.2e-4", args: "--lr0 0.000119"}
+  - {name: "lr_3e-4",   group: lr,       level: "3e-4",   args: "--lr0 0.0003"}
+  - {name: "lr_1e-3",   group: lr,       level: "1e-3",   args: "--lr0 0.001"}
+  - {name: "cos_1.2e-4", group: schedule, level: "cosine", args: "--cos-lr"}
+  # epochs
+  - {name: "ep_5",      group: epochs,   level: "5",      args: "--epochs 5"}
+  - {name: "ep_30",     group: epochs,   level: "30",     args: "--epochs 30"}
+  # training images (nested, fixed manifests; the 9.8k set is the baseline)
+  - {name: "n_2k",      group: data,     level: "2k",     args: "--train-list {manifests}/coco_train_2k.txt"}
+  - {name: "n_5k",      group: data,     level: "5k",     args: "--train-list {manifests}/coco_train_5k.txt"}
+  - {name: "n_30k",     group: data,     level: "30k",    args: "--train-list {manifests}/coco_train_30k.txt"}
+  # frozen layers
+  - {name: "frz_10",    group: freeze,   level: "10",     args: "--freeze 10"}
+  - {name: "frz_22",    group: freeze,   level: "22",     args: "--freeze 22"}
+  # starting model (learning rate stays at the baseline value; convergence differences are reported, not tuned away)
+  - {name: "m_11s",     group: model,    level: "yolo11s", args: "--weights models/yolo11s.pt"}
+  - {name: "m_26n",     group: model,    level: "yolo26n", args: "--weights models/yolo26n.pt"}
