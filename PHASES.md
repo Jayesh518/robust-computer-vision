@@ -10,8 +10,8 @@ Standard shape: see the workspace `docs/phases.md`. Status date: 2026-10-24.
 | 3. Baseline (B0) | yolo11n, yolo11s, yolo26n zero-shot on 35 sets each, with intervals and latency | **done** |
 | 4. Intervention (B1, A1, A2) | Clean fine-tune control, condition-aware augmentation, plus BDD100K adverse data; yolo11n, 10 epochs, 3 seeds each | **done** (first recipe) |
 | 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, closed (5a-5d)**; gate met in part: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
-| 6. Extension (E1) | Classical enhancement preprocessing (CLAHE and adaptive gamma for low light, dark-channel-prior dehazing for fog, non-local-means for noise) before the zero-shot model, accuracy gain against added latency | **in progress** (plan written, see below) |
-| 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | planned |
+| 6. Extension (E1) | Classical enhancement preprocessing (CLAHE and adaptive gamma for low light, dark-channel-prior dehazing for fog, non-local-means for noise) before the zero-shot model, accuracy gain against added latency | **done**: dehazing helps on fog, the low-light methods do not (see README) |
+| 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | **next** |
 
 ## Gate for phase 5 (what must be true to close it)
 - B1 is no longer below zero-shot on clean COCO, or the reason it is below is shown by an experiment.
@@ -69,3 +69,6 @@ B1L and A1L (batch-norm locked), 3 seeds each, 23 sets. Rule applied as written:
 - **Control check:** the re-encode control must be within 0.005 of the original; otherwise comparisons are made against the control instead.
 - DAWN fog has only 117 person boxes; a wide interval there counts as inconclusive, not as a null result.
 - Latency is reported for every method whatever the accuracy outcome; no threshold is set on it.
+
+### Phase 6 outcome (2026-10-24)
+Rule applied as written. Dark-channel dehazing **helps on fog**: synthetic +0.084 [+0.075, +0.091], real DAWN fog +0.039 [+0.007, +0.071] (117 person boxes, lower bound only just above 0); about 51 to 151 ms per image on the CPU against the detector's 16 ms. CLAHE and adaptive gamma **do not help on low light** (ExDark -0.001 and -0.030; synthetic -0.02 and -0.06; the synthetic noise is amplified by brightening). Non-local-means is synthetic-only and harmful on clean images (-0.042). Re-encode control moved some sets by up to 0.008, so gains against the control are also reported. Not tested: rain, snow, motion blur, learned enhancers.

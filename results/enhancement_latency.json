@@ -1,0 +1,141 @@
+{
+  "note": "CPU, single call per image at the stored image size, 100 sampled images; OpenCV default threading",
+  "opencv": "5.0.0",
+  "methods": {
+    "clean_bench1k__clahe": {
+      "median_ms": 3.9855999930296093,
+      "p95_ms": 5.654124988359397,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "clean_bench1k__gamma": {
+      "median_ms": 1.3748500059591606,
+      "p95_ms": 2.0446950002224185,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "clean_bench1k__dcp": {
+      "median_ms": 39.182650012662634,
+      "p95_ms": 54.01772500044899,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "clean_bench1k__nlm": {
+      "median_ms": 547.8218499920331,
+      "p95_ms": 689.2752649830072,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "low_light_s2__clahe": {
+      "median_ms": 1.936899992870167,
+      "p95_ms": 2.635069978714455,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "low_light_s2__gamma": {
+      "median_ms": 0.7014500006334856,
+      "p95_ms": 1.0390050068963317,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "low_light_s3__clahe": {
+      "median_ms": 1.864449994172901,
+      "p95_ms": 2.9122250110958703,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "low_light_s3__gamma": {
+      "median_ms": 0.6887499912409112,
+      "p95_ms": 1.1094050190877165,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "exdark_all__clahe": {
+      "median_ms": 2.932549992692657,
+      "p95_ms": 9.648634977929754,
+      "n": 100,
+      "median_size_hw": [
+        480,
+        640
+      ]
+    },
+    "exdark_all__gamma": {
+      "median_ms": 1.0136500059161335,
+      "p95_ms": 5.3031049770652245,
+      "n": 100,
+      "median_size_hw": [
+        480,
+        640
+      ]
+    },
+    "bdd_night_clear__clahe": {
+      "median_ms": 5.219999991822988,
+      "p95_ms": 7.729044987354427,
+      "n": 100,
+      "median_size_hw": [
+        720,
+        1280
+      ]
+    },
+    "bdd_night_clear__gamma": {
+      "median_ms": 2.2703499998897314,
+      "p95_ms": 3.8336200115736574,
+      "n": 100,
+      "median_size_hw": [
+        720,
+        1280
+      ]
+    },
+    "fog_s3__dcp": {
+      "median_ms": 50.88269998668693,
+      "p95_ms": 66.58181999519002,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    },
+    "dawn_fog__dcp": {
+      "median_ms": 150.731050001923,
+      "p95_ms": 240.34774499887135,
+      "n": 100,
+      "median_size_hw": [
+        800,
+        1280
+      ]
+    },
+    "gaussian_noise_s3__nlm": {
+      "median_ms": 540.5569499998819,
+      "p95_ms": 643.6711199959973,
+      "n": 100,
+      "median_size_hw": [
+        428,
+        640
+      ]
+    }
+  }
+}
