@@ -62,6 +62,13 @@ def main() -> None:
     ap.add_argument("--fraction", type=float, default=1.0, help="debug: fraction of the training images to use")
     ap.add_argument("--p-degrade", type=float, default=0.5)
     ap.add_argument("--name", default=None)
+    # Phase 5 diagnosis knobs; left at None they reproduce the original recipe exactly (Ultralytics defaults).
+    ap.add_argument("--optimizer", default=None, help="e.g. SGD or AdamW (default: auto)")
+    ap.add_argument("--lr0", type=float, default=None)
+    ap.add_argument("--lrf", type=float, default=None, help="final lr as a fraction of lr0")
+    ap.add_argument("--freeze", type=int, default=None, help="freeze the first N layers (10 = the whole backbone)")
+    ap.add_argument("--warmup-epochs", type=float, default=None)
+    ap.add_argument("--plain-aug", action="store_true", help="diagnosis: no mosaic/colour/geometric augmentation at all")
     args = ap.parse_args()
 
     from ultralytics import YOLO
@@ -72,6 +79,15 @@ def main() -> None:
                   seed=args.seed, deterministic=True, workers=args.workers, amp=True, plots=False, val=True,
                   warmup_epochs=1, close_mosaic=3, project=str(ROOT / "runs" / "train"), name=name, exist_ok=True,
                   fraction=args.fraction, device=0)
+    for key in ("optimizer", "lr0", "lrf", "freeze"):
+        if getattr(args, key) is not None:
+            kwargs[key] = getattr(args, key)
+    if args.plain_aug:
+        kwargs.update(mosaic=0.0, mixup=0.0, hsv_h=0.0, hsv_s=0.0, hsv_v=0.0, translate=0.0, scale=0.0, fliplr=0.0, erasing=0.0, close_mosaic=0)
+    if args.warmup_epochs is not None:
+        kwargs["warmup_epochs"] = args.warmup_epochs
+        if args.warmup_epochs == 0:
+            kwargs["warmup_bias_lr"] = 0.0
     if args.variant in ("A1", "A2"):
         kwargs["augmentations"] = [ConditionAwareDegradation(p=args.p_degrade)]
     print(f"== training {name}: {kwargs['data']} | augmentation: {'condition-aware p=%.2f' % args.p_degrade if 'augmentations' in kwargs else 'default only'}", flush=True)
