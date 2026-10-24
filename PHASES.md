@@ -10,7 +10,7 @@ Standard shape: see the workspace `docs/phases.md`. Status date: 2026-10-24.
 | 3. Baseline (B0) | yolo11n, yolo11s, yolo26n zero-shot on 35 sets each, with intervals and latency | **done** |
 | 4. Intervention (B1, A1, A2) | Clean fine-tune control, condition-aware augmentation, plus BDD100K adverse data; yolo11n, 10 epochs, 3 seeds each | **done** (first recipe) |
 | 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, closed (5a-5d)**; gate met in part: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
-| 6. Extension (E1) | Enhancement preprocessing (low-light, dehaze, derain) before the zero-shot model, reporting accuracy gain against added latency | **next** |
+| 6. Extension (E1) | Classical enhancement preprocessing (CLAHE and adaptive gamma for low light, dark-channel-prior dehazing for fog, non-local-means for noise) before the zero-shot model, accuracy gain against added latency | **in progress** (plan written, see below) |
 | 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | planned |
 
 ## Gate for phase 5 (what must be true to close it)
@@ -53,3 +53,19 @@ The other findings (synthetic gains, low-light loss) are reported regardless of 
 
 ### Phase 5d outcome (2026-10-24)
 B1L and A1L (batch-norm locked), 3 seeds each, 23 sets. Rule applied as written: A1L minus zero-shot was -0.014 (ExDark), -0.019 (DAWN fog), -0.010 (BDD clear night), all below the required +0.010, and A1L did not beat B1L on ExDark in all seeds (-0.023, +0.001, +0.007). **Transfer not supported**: a negative result for this recipe. Locking batch-norm did not improve B1 and made A1's synthetic gains smaller and less stable. Phase 5 is closed; next is phase 6.
+
+## Phase 6 plan (E1), written 2026-10-24 before any enhanced image or score exists
+**Question.** Does classical preprocessing in front of the unchanged zero-shot yolo11n recover accuracy lost to low light, fog or noise, and at what latency cost? This is a different route from phase 5, where training on degradations did not transfer to real photographs.
+
+**Methods** (src/rcv/enhance.py; deterministic, no learned weights, so no new licence): CLAHE and adaptive gamma for low light; dark-channel-prior dehazing for fog; non-local-means denoising for noise. **Not tested:** rain, snow and motion blur, because no credible classical single-image method is offered for them here (derain and deblur normally need learned models; a weak method would only produce an uninformative result). Learned enhancers (for example Zero-DCE) are left for later.
+
+**Sets and controls.** Each source set is evaluated three ways on identical images: the original, a re-encoded identity copy ("none", controls for the extra JPEG generation), and each enhanced version. Sources: low light s2 and s3 and ExDark and BDD clear night (CLAHE, gamma); fog s3 and DAWN fog (dehazing); noise s3 (denoising); and the clean 1000-image sample with all four methods (harm on images that need no enhancement).
+
+**Measures.** Person mAP50-95 with the **paired** bootstrap difference (enhanced minus original, same images, 95 % interval); enhancement time per image on the CPU (median and 95th percentile at native image size) added to the detector's 16.1 ms forward pass.
+
+**Decision rule, fixed now.**
+- A method **helps on a condition** if the paired gain is at least +0.01 **and** the interval's lower bound is above 0, on the real set (ExDark for low light, DAWN fog for fog) **and** on the synthetic set. Helping only on the synthetic set is reported as synthetic-only. Noise has no real set, so it can only be synthetic-only.
+- **Harm check:** a method with a clean-sample gain below -0.01 whose interval excludes 0 is reported as harmful when applied unconditionally (it would need a gate).
+- **Control check:** the re-encode control must be within 0.005 of the original; otherwise comparisons are made against the control instead.
+- DAWN fog has only 117 person boxes; a wide interval there counts as inconclusive, not as a null result.
+- Latency is reported for every method whatever the accuracy outcome; no threshold is set on it.
