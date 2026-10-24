@@ -9,7 +9,7 @@ Standard shape: see the workspace `docs/phases.md`. Status date: 2026-10-24.
 | 2. Pipeline and validation | Label mapping, deterministic degradations and occlusion, Ultralytics evaluation, bootstrap intervals, found-rate; cross-checked against pycocotools; 117 tests; CI | **done** |
 | 3. Baseline (B0) | yolo11n, yolo11s, yolo26n zero-shot on 35 sets each, with intervals and latency | **done** |
 | 4. Intervention (B1, A1, A2) | Clean fine-tune control, condition-aware augmentation, plus BDD100K adverse data; yolo11n, 10 epochs, 3 seeds each | **done** (first recipe) |
-| 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, gate met in part**: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
+| 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, closed (5a-5d)**; gate met in part: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
 | 6. Extension (E1) | Enhancement preprocessing (low-light, dehaze, derain) before the zero-shot model, reporting accuracy gain against added latency | **next** |
 | 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | planned |
 
@@ -41,4 +41,15 @@ Source check (ultralytics 8.4.173): the trainer calls `model.train()` every epoc
 - If D5 is confirmed and D4 fixes the control, B1/A1/A2 are re-run with the lock over 3 seeds (about 7 hours). If D5 is not confirmed, the batch-norm explanation is rejected and the open items stay open.
 
 ### Phase 5c outcome (2026-10-24)
-D5 (learning rate about zero + batch-norm locked) matched zero-shot (clean 0.529 vs 0.532, ExDark 0.381 vs 0.376, the latter just inside the 0.005 tolerance): batch-norm drift explains the loss without learning. D4 (original recipe + lock) did not fix the control (clean 0.515, ExDark 0.370, low light s3 0.127), so by the rule written beforehand the variants were not re-run. Still open: effect of more training data, effect of the 9-class label restriction, and whether a batch-norm-locked A1 beats zero-shot on real photographs (not run).
+D5 (learning rate about zero + batch-norm locked) matched zero-shot (clean 0.529 vs 0.532, ExDark 0.381 vs 0.376, the latter just inside the 0.005 tolerance): batch-norm drift explains the loss without learning. D4 (original recipe + lock) did not fix the control (clean 0.515, ExDark 0.370, low light s3 0.127), so by the rule written beforehand the variants were not re-run. Still open: effect of more training data, effect of the 9-class label restriction, and (answered later in 5d) whether a batch-norm-locked A1 beats zero-shot on real photographs.
+
+### Phase 5d plan (written 2026-10-24, before any result)
+Question: once the batch-norm side effect is removed, does condition-aware augmentation beat the **zero-shot** model on real photographs? Runs: B1L (clean control) and A1L (condition-aware augmentation), both with every BatchNorm layer locked, 3 seeds each, 23 core sets, yolo11n, 10 epochs.
+Decision rule, fixed now. Let `d` = mean over the 3 seeds of (A1L minus zero-shot) in person mAP50-95 on the real sets.
+- **Transfer supported** if `d >= +0.01` on ExDark **and** on DAWN fog **and** on BDD clear night, and A1L minus B1L is positive on ExDark in all 3 seeds.
+- **Transfer not supported** if `d` is below +0.01 on ExDark or on DAWN fog; reported as a negative result.
+- Anything in between (mixed sets) is reported as mixed, with the sets named.
+The other findings (synthetic gains, low-light loss) are reported regardless of the outcome. A2 is not re-run: it is confounded by extra data and its BDD gain is in-domain.
+
+### Phase 5d outcome (2026-10-24)
+B1L and A1L (batch-norm locked), 3 seeds each, 23 sets. Rule applied as written: A1L minus zero-shot was -0.014 (ExDark), -0.019 (DAWN fog), -0.010 (BDD clear night), all below the required +0.010, and A1L did not beat B1L on ExDark in all seeds (-0.023, +0.001, +0.007). **Transfer not supported**: a negative result for this recipe. Locking batch-norm did not improve B1 and made A1's synthetic gains smaller and less stable. Phase 5 is closed; next is phase 6.
