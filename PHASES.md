@@ -12,6 +12,7 @@ Standard shape: see the workspace `docs/phases.md`. Status date: 2026-10-24.
 | 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, closed (5a-5d)**; gate met in part: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
 | 6. Extension (E1) | Classical enhancement preprocessing (CLAHE and adaptive gamma for low light, dark-channel-prior dehazing for fog, non-local-means for noise) before the zero-shot model, accuracy gain against added latency | **done**: dehazing helps on fog, the low-light methods do not (see README) |
 | 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | **next** |
+| 8. Fine-tuning study | One-at-a-time sweep of learning rate and schedule, epochs, training-data size, frozen layers and starting model, 3 seeds each, to learn what each variable does | **in progress** (plan below) |
 
 ## Gate for phase 5 (what must be true to close it)
 - B1 is no longer below zero-shot on clean COCO, or the reason it is below is shown by an experiment.
@@ -72,3 +73,18 @@ B1L and A1L (batch-norm locked), 3 seeds each, 23 sets. Rule applied as written:
 
 ### Phase 6 outcome (2026-10-24)
 Rule applied as written. Dark-channel dehazing **helps on fog**: synthetic +0.084 [+0.075, +0.091], real DAWN fog +0.039 [+0.007, +0.071] (117 person boxes, lower bound only just above 0); about 51 to 151 ms per image on the CPU against the detector's 16 ms. CLAHE and adaptive gamma **do not help on low light** (ExDark -0.001 and -0.030; synthetic -0.02 and -0.06; the synthetic noise is amplified by brightening). Non-local-means is synthetic-only and harmful on clean images (-0.042). Re-encode control moved some sets by up to 0.008, so gains against the control are also reported. Not tested: rain, snow, motion blur, learned enhancers.
+
+## Phase 8 plan (written 2026-10-24 before any phase 8 run)
+**Purpose.** Learn what each fine-tuning variable does, by changing one thing at a time against a fixed baseline and reading the results with the same standards as the rest of the project (3 seeds, a noise rule, negative results reported). Phase 7 (report and release) is deferred until this is done.
+
+**Baseline recipe.** yolo11n, condition-aware augmentation (p=0.5), 10 epochs, the 9,831-image COCO subset, AdamW, nothing frozen, batch 16, BatchNorm unlocked. Reference: the existing A1 runs (3 seeds).
+
+**Settings (15, each x 3 seeds, seed-major order).** Learning rate (AdamW, momentum 0.9): 2e-5, 6e-5, 1.2e-4 (explicit replicate of the baseline), 3e-4, 1e-3. Schedule: cosine at 1.2e-4. Epochs: 5 and 30. Training images: 2k, 5k and 30k (nested subsets from one seeded shuffle, the 9.8k set is the baseline). Frozen layers: 10 and 22. Starting model: yolo11s and yolo26n (learning rate left at 1.2e-4; convergence differences are reported, not tuned away).
+
+**Evaluation per run.** Eight core sets: clean COCO sample, low light s3, rain s3, occlusion 50 %, ExDark, DAWN fog, BDD clear day, BDD clear night.
+
+**Hypotheses.** H1: more training data narrows the clean-accuracy loss (30k closer to zero-shot 0.532 than 2k). H2: a lower learning rate or frozen layers reduces the loss on clean and real sets but also reduces the gain on the synthetic degradations. H3: the larger starting model (yolo11s) is better at every setting. H4: more epochs help on the synthetic sets but not on the real ones.
+
+**Decision rule, fixed now.** An effect counts as **real** if the mean difference to the baseline over the 3 seeds is at least 0.01 in absolute value **and** has the same sign in all 3 seeds. Anything smaller or inconsistent is reported as noise. Unsupported hypotheses are reported as unsupported. The grid is not extended after seeing results; further ideas are listed as follow-ups (augmentation strength, mosaic, 80-class labels, optimizer type, image size, batch size, a B1 version of the sweep).
+
+**Checks before trusting the sweep.** The explicit 1.2e-4 replicate (seed 0) must agree with the existing A1 seed 0 within seed spread, otherwise the sweep is stopped and diagnosed. The 9.8k manifest must equal the existing training file list; the subsets must be nested.
