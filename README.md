@@ -352,6 +352,14 @@ Latency context: the detector forward pass is 16.1 ms (batch 1, GPU); the enhanc
 _Running: the tables and figures appear here once all three seeds of every setting are finished._
 <!-- SWEEP:END -->
 
+### Live webcam demo
+A small local server for trying the models on your own webcam (`demo/`). The browser opens the camera, sends frames to the server on this computer only, and draws the returned boxes (person, animals, vehicles). Frames are not saved and the server listens on `127.0.0.1` only. You can switch the model (the pretrained ones and the fine-tuned checkpoints from the experiments), the confidence threshold, and the optional preprocessing (CLAHE, adaptive gamma, dehazing).
+
+```
+.venv\Scripts\python demo\server.py              # CPU; use --device 0 for the GPU when nothing else is training
+```
+then open http://127.0.0.1:8765 and press *Start camera*. It is a research demo, not a safety system, and says nothing about whether a person is alive or unhurt.
+
 ### Findings and caveats
 **What the data show** (zero-shot models, nothing fine-tuned; person is the primary class; intervals are in the tables above)
 

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Detection Demo</title>
+<style>
+  :root { --bg:#fcfcfb; --panel:#ffffff; --ink:#0b0b0b; --ink2:#52514e; --line:#e4e3df; --accent:#2a78d6; --person:#eb6834; --animal:#2a78d6; --vehicle:#1baf7a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1a1a19; --panel:#232322; --ink:#f0efec; --ink2:#c3c2b7; --line:#383835; --accent:#3987e5; --person:#d95926; --animal:#3987e5; --vehicle:#199e70; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 4px 0 2px; }
+  .sub { color: var(--ink2); margin: 0 0 14px; }
+  .stage { position: relative; background:#000; border-radius: 8px; overflow:hidden; aspect-ratio: 4/3; max-width: 760px; }
+  video, canvas { position:absolute; inset:0; width:100%; height:100%; object-fit: contain; }
+  .controls { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap:10px; margin: 14px 0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
+  label { display:flex; flex-direction:column; font-size:12px; color:var(--ink2); gap:4px; }
+  select, input[type=range], button { font:inherit; }
+  select { padding:6px; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; }
+  button { padding:8px 14px; border:0; border-radius:6px; background:var(--accent); color:#fff; cursor:pointer; }
+  button.secondary { background:transparent; color:var(--ink); border:1px solid var(--line); }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .stats { font-variant-numeric: tabular-nums; color:var(--ink2); font-size:13px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; margin-right:14px; font-size:13px; color:var(--ink2); }
+  .legend i { width:12px; height:12px; border-radius:2px; display:inline-block; }
+  .note { font-size:12.5px; color:var(--ink2); border-top:1px solid var(--line); margin-top:16px; padding-top:10px; }
+  .err { color:#d03b3b; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Live detection demo</h1>
+  <p class="sub">Person, animals and vehicles from your webcam. Frames go to a server on <b>this computer only</b> and are not saved.</p>
+
+  <div class="row">
+    <button id="start">Start camera</button>
+    <button id="stop" class="secondary" disabled>Stop</button>
+    <span class="stats" id="stats">camera off</span>
+  </div>
+  <div class="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas></div>
+
+  <div class="controls">
+    <label>Model <select id="model"></select></label>
+    <label>Preprocessing <select id="enh"></select></label>
+    <label>Confidence threshold: <span id="confv">0.35</span><input id="conf" type="range" min="0.10" max="0.90" step="0.05" value="0.35"></label>
+    <label>Mirror view <select id="mirror"><option value="1">on (like a mirror)</option><option value="0">off</option></select></label>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--person)"></i>person (primary)</span>
+    <span><i style="background:var(--animal)"></i>animal (cat, dog, horse, sheep, cow)</span>
+    <span><i style="background:var(--vehicle)"></i>vehicle (car, bus, truck)</span>
+  </div>
+  <p class="note">Research demo, not a safety system. A box means the model thinks it sees that class; it can be wrong, especially in the dark, in fog, or when a person is partly hidden.
+  It makes no claim about whether a person is alive, conscious or unhurt. Preprocessing options: CLAHE and adaptive gamma (low light, they did not help on real photographs in the experiments),
+  dehaze (helped on fog, but is slow). Frames stay on this computer.</p>
+  <p class="err" id="err"></p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const video = $("video"), overlay = $("overlay"), ctx = overlay.getContext("2d");
+const grab = document.createElement("canvas"), gctx = grab.getContext("2d");
+let stream = null, running = false, inflight = false, frames = 0, t0 = 0;
+const COLORS = { primary: getComputedStyle(document.documentElement).getPropertyValue("--person").trim(),
+                 secondary: getComputedStyle(document.documentElement).getPropertyValue("--animal").trim(),
+                 context: getComputedStyle(document.documentElement).getPropertyValue("--vehicle").trim() };
+
+async function init() {
+  try {
+    const info = await (await fetch("/models")).json();
+    $("model").innerHTML = info.models.map(m => `<option value="${m}"${m === "yolo11s" ? " selected" : ""}>${m}</option>`).join("");
+    $("enh").innerHTML = info.enhancements.map(m => `<option value="${m}">${m}</option>`).join("");
+    $("stats").textContent = `camera off (server device: ${info.device})`;
+  } catch (e) { $("err").textContent = "Cannot reach the server: " + e; }
+}
+$("conf").oninput = () => { $("confv").textContent = Number($("conf").value).toFixed(2); };
+
+$("start").onclick = async () => {
+  $("err").textContent = "";
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  } catch (e) { $("err").textContent = "Camera not available: " + e.message; return; }
+  video.srcObject = stream; await video.play();
+  running = true; frames = 0; t0 = performance.now();
+  $("start").disabled = true; $("stop").disabled = false;
+  loop();
+};
+$("stop").onclick = () => {
+  running = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null; video.srcObject = null; ctx.clearRect(0, 0, overlay.width, overlay.height);
+  $("start").disabled = false; $("stop").disabled = true; $("stats").textContent = "camera off";
+};
+
+async function loop() {
+  while (running) {
+    if (video.readyState >= 2 && !inflight) {
+      inflight = true;
+      try { await detectOnce(); } catch (e) { $("err").textContent = "Detection failed: " + e.message; await new Promise(r => setTimeout(r, 800)); }
+      inflight = false;
+    } else { await new Promise(r => setTimeout(r, 20)); }
+  }
+}
+
+async function detectOnce() {
+  const w = 640, h = Math.round(640 * video.videoHeight / video.videoWidth) || 480;
+  grab.width = w; grab.height = h; gctx.drawImage(video, 0, 0, w, h);          // always send the unmirrored frame
+  const blob = await new Promise(res => grab.toBlob(res, "image/jpeg", 0.7));
+  const q = new URLSearchParams({ model: $("model").value, enh: $("enh").value, conf: $("conf").value });
+  const r = await fetch("/detect?" + q, { method: "POST", body: blob });
+  if (!r.ok) throw new Error("server said " + r.status);
+  const d = await r.json();
+  draw(d);
+  frames++;
+  const fps = frames / ((performance.now() - t0) / 1000);
+  const persons = d.boxes.filter(b => b.role === "primary").length;
+  $("stats").textContent = `${fps.toFixed(1)} frames/s | detect ${d.detect_ms} ms${d.enhance_ms > 1 ? ` + preprocess ${d.enhance_ms} ms` : ""} | ${d.boxes.length} objects, ${persons} person(s)`;
+}
+
+function draw(d) {
+  const mirror = $("mirror").value === "1";
+  video.style.transform = mirror ? "scaleX(-1)" : "none";
+  overlay.style.transform = mirror ? "scaleX(-1)" : "none";
+  overlay.width = d.width; overlay.height = d.height;
+  ctx.clearRect(0, 0, d.width, d.height);
+  ctx.lineWidth = 3; ctx.font = "bold 15px system-ui, sans-serif"; ctx.textBaseline = "top";
+  for (const b of d.boxes) {
+    const c = COLORS[b.role] || "#fff";
+    ctx.strokeStyle = c; ctx.strokeRect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
+    const text = `${b.label} ${(b.conf * 100).toFixed(0)}%`, tw = ctx.measureText(text).width + 8;
+    ctx.save();
+    if (mirror) { ctx.translate(b.x1 + tw, 0); ctx.scale(-1, 1); ctx.translate(-b.x1, 0); }   // keep the label text readable on the mirrored canvas
+    ctx.fillStyle = c; ctx.fillRect(b.x1, Math.max(0, b.y1 - 20), tw, 20);
+    ctx.fillStyle = "#fff"; ctx.fillText(text, b.x1 + 4, Math.max(0, b.y1 - 20) + 2);
+    ctx.restore();
+  }
+}
+init();
+</script>
+</body>
+</html>
