@@ -34,3 +34,11 @@ wandb/
 
 # per-run completion markers written by scripts/run_finetune_all.sh
 results/*.done
+
+# personal videos and demo outputs: never committed
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+outputs/
