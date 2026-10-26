@@ -1,12 +1,19 @@
 # Robust Computer Vision Under Difficult Conditions
 
-**Status: In progress, paused after the fine-tuning study.** Zero-shot baselines (B0) are complete for three models on synthetic and real test sets, with confidence intervals. Three fine-tuned variants (clean control, condition-aware augmentation, plus BDD100K adverse data) are trained and evaluated over 3 seeds on yolo11n. Classical enhancement preprocessing (E1) is also evaluated: it helps on fog, not on low light. A fine-tuning study (Phase 8: 15 settings x 3 seeds, one variable at a time) is complete; the report, failure gallery and release (Phase 7) are still to come.
+**Status: Completed (2026-10-26).** Zero-shot baselines for three models, three fine-tuned variants (3 seeds), a diagnosis of the fine-tuning loss, a classical enhancement experiment and a 45-run fine-tuning sweep, all on synthetic and real test sets with confidence intervals. Full write-up: [docs/report.md](docs/report.md); two-page version: [docs/summary.md](docs/summary.md); model card: [models/README.md](models/README.md).
 
 How much does a pretrained YOLO detector degrade on **people** (primary) and animals (secondary) in low light, fog, rain, snow, motion blur, noise and partial occlusion, and which cheap intervention (fine-tuning, condition-aware augmentation, enhancement preprocessing) recovers the most accuracy per millisecond of latency?
 
 The motivation is disaster response: finding people in poor conditions. Part 1 of 3 in a connected portfolio: computer vision, then ROS 2 navigation ([ros2-slam-navigation](https://github.com/jayesh518/ros2-slam-navigation)), then a physical rover ([autonomous-rescue-rover](https://github.com/jayesh518/autonomous-rescue-rover)).
 
 Project phases and status: [PHASES.md](PHASES.md).
+
+## Key results
+- **How much does the pretrained detector lose?** A lot under my synthetic stress (person mAP50-95 0.53 clean, 0.15 for strong low light or motion blur), but on **real** photographs only night shows a clear drop (BDD100K 0.198 by day, 0.149 at night).
+- **Does fine-tuning recover it?** It learns the synthetic degradations (+0.07 to +0.17) but **not** real photographs: of 60 comparisons with the matching zero-shot model across a 45-run sweep, only 2 came out ahead. A negative result, reported as such.
+- **What does preprocessing do?** Dark-channel dehazing helps on real fog (+0.039 [+0.007, +0.071], a thin set); low-light enhancement does not.
+- **What is the best detector tested?** The pretrained yolo11s, with dehazing in front of it for fog. No fine-tuned weights are released because none is an improvement.
+- **Not done, deliberately:** a failure gallery of images (no publishable photographs were available; dataset images are never published here), yolo26s, thermal sensing, any alive/dead claim. A live webcam demo is in `demo/`.
 
 ## Scope (staged on purpose)
 **This project: single-camera RGB.** Thermal sensing, simulated thermal and any life-signs inference are later stages, not claims of this repository.
@@ -26,7 +33,7 @@ Project phases and status: [PHASES.md](PHASES.md).
 - **No alive/dead or life-signs claim is made or planned.** A thermal camera reads surface heat only; it cannot see through concrete or rubble, and clothing, ambient temperature and the slow cooling of a body make temperature unreliable. A wrong "dead" label could cost a life. If thermal work is added later, the only output considered is "heat signature consistent with a person: present / absent / uncertain", as a hint for a human operator.
 
 ## What is real and what is synthetic
-Every reported number will be labelled accordingly.
+Every reported number is labelled accordingly.
 
 | Evidence | Classes | Type |
 |---|---|---|
@@ -47,11 +54,11 @@ Every reported number will be labelled accordingly.
 | A2 | A1 plus a BDD100K adverse-condition subset (fog, rain, snow, night; person and vehicles only, BDD has no animals). ExDark and DAWN stay test-only. | **done**, 3 seeds |
 | E1 | Classical enhancement preprocessing (CLAHE, gamma, dark-channel dehazing, non-local-means) before B0, accuracy gain vs added latency | **done** (see Results) |
 
-Training design: labels stay in the COCO-80 index space (the pretrained head is kept, so results compare directly with B0); a 9,831-image COCO train subset, a separate 500-image selection split (few animals in it, so a weak guide for animal classes), 3,130 BDD100K adverse images for A2; 3 seeds per variant planned.
+Training design: labels stay in the COCO-80 index space (the pretrained head is kept, so results compare directly with B0); a 9,831-image COCO train subset, a separate 500-image selection split (few animals in it, so a weak guide for animal classes), 3,130 BDD100K adverse images for A2; 3 seeds per variant.
 
-Two caveats that will accompany every A1/A2 result: (1) the training degradations and the **synthetic** test degradations come from the same generator, so gains on the synthetic sets are in-distribution and optimistic; only the **real** sets show whether they transfer; (2) A2 also has more and different data than A1, not only adverse conditions.
+Two caveats that accompany every A1/A2 result: (1) the training degradations and the **synthetic** test degradations come from the same generator, so gains on the synthetic sets are in-distribution and optimistic; only the **real** sets show whether they transfer; (2) A2 also has more and different data than A1, not only adverse conditions.
 
-Metrics: mAP50-95, mAP50, precision, recall (per class, per condition, per severity, per occlusion level), person found-rate, batch-1 latency, model size, 95 % bootstrap intervals. Negative results will be reported.
+Metrics: mAP50-95, mAP50, precision, recall (per class, per condition, per severity, per occlusion level), person found-rate, batch-1 latency, model size, 95 % bootstrap intervals. Negative results are reported.
 
 ## Later stages (not part of this repository's claims yet)
 1. Simulated thermal camera and humans in Gazebo (Project 2), as a controlled test.
@@ -531,15 +538,15 @@ then open http://127.0.0.1:8765 and press *Start camera*. It is a research demo,
 2. **A bigger model raises scores but does not remove the low-light and motion-blur loss.** yolo11s is +0.06 better on clean person mAP50-95 (0.594 vs 0.532), yet its strongest-severity drops for low light (-0.386 vs -0.382) and motion blur (-0.406 vs -0.386) are no smaller than yolo11n's. Whether the model-to-model differences in drop are real was not tested.
 3. **On real photographs, night is the only condition with a clear measured effect, and synthetic rain overstates what BDD100K shows.** For yolo11n, BDD100K person mAP50-95 is 0.198 in clear daytime and 0.149 at clear night: a drop of 0.049 [0.031, 0.070]. Daytime rain (+0.001 [-0.029, +0.029]) and snow (-0.026 [-0.056, +0.004]) show no detectable drop, and rainy or snowy night is not distinguishable from clear night. Strongest synthetic rain costs 0.31. Possible reasons, **not separated here**: my synthetic rain is far harsher than typical BDD rain; BDD accuracy is already low (0.198, small distant pedestrians), leaving little room to fall; BDD weather tags are per video, not per frame. Do not use the synthetic severities to predict real-world loss.
 4. **A partly hidden person is usually still found, even when the strict score collapses.** yolo11n at 50 % of the box hidden: mAP50-95 falls from 0.721 to 0.064, but a person is still found (IoU >= 0.1, confidence >= 0.25) in 0.761 [0.727, 0.796] of cases versus 0.950 unoccluded. At 75 % hidden only 0.431 [0.393, 0.472] are found, mostly with loose overlap (IoU >= 0.3: 0.116). yolo11s finds more at 75 % (0.516 [0.478, 0.556]). The found rate ignores false alarms and counts any overlapping detection, so it is an optimistic measure of detection, not of correct localisation.
-5. **Model choice, and a result that weakens my earlier reasoning.** On this GPU (forward pass only, batch 1) yolo11s costs 16.4 ms median against 16.1 ms for yolo11n, and yolo26n costs 22.0 ms: small models are launch-overhead bound here. `yolo11n` stays the model for fine-tuning because it fits 4 GB comfortably (training speed not yet measured), but for accuracy per millisecond at inference `yolo11s` looks better on this hardware. That ranking may differ on a rover's embedded computer, and the latency excludes image decoding and post-processing.
+5. **Model choice, and a result that weakens my earlier reasoning.** On this GPU (forward pass only, batch 1) yolo11s costs 16.4 ms median against 16.1 ms for yolo11n, and yolo26n costs 22.0 ms: small models are launch-overhead bound here. `yolo11n` was used for the fine-tuning experiments because it fits 4 GB comfortably (24 minutes for the baseline recipe, against 121 for yolo11s), but for accuracy per millisecond at inference `yolo11s` is the better choice on this hardware. That ranking may differ on a rover's embedded computer, and the latency excludes image decoding and post-processing.
 6. **yolo26n** (end-to-end, no NMS) matches yolo11n on person (0.528 vs 0.532 clean), is slower here, and shows no advantage.
 
 **What these results cannot say**
-- **The zero-shot results above show degradation only.** What fine-tuning recovers is in the section above; enhancement preprocessing (E1) is still untested.
+- **The zero-shot findings above show degradation only.** What fine-tuning, the diagnosis, enhancement preprocessing and the sweep recover is reported in their own sections.
 - **Animals:** the synthetic sample has only 71 to 130 boxes per animal class, so those results are noisy. The only real-photo animal evidence is cat and dog in ExDark low light (macro 0.350 [0.334, 0.369] for yolo11n) and it has no clean reference, so it gives no degradation figure.
 - **No clean reference** exists for ExDark or DAWN, so no drop can be computed for them. DAWN has very few person boxes (28 in rain) and wide intervals. BDD100K has only 13 foggy images, so apart from DAWN's 117 person boxes there is no real-fog evidence.
 - **Data caveats:** the BDD100K files failed the md5 published in its docs (the mirror's packaging differs), so their authenticity is not independently verified; BDD `rider` is mapped to `person`. Each dataset labels only its own classes, so a person the detector correctly finds but the authors did not label counts as a false positive, lowering every real-set score.
-- **Synthetic degradations are simplified models,** not real weather, and training/test degradations will share one generator, so future synthetic gains will be in-distribution.
+- **Synthetic degradations are simplified models,** not real weather, and training and test degradations share one generator, so synthetic gains from augmentation are in-distribution.
 
 ## Licenses and attribution
 - **Ultralytics YOLO code and weights are AGPL-3.0.** Fine for this research; relevant if the code is reused commercially.
