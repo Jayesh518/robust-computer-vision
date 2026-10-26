@@ -189,6 +189,29 @@ def build() -> tuple[str, list[Path]]:
         if f:
             figs.append(f)
             out.append(f"![{title}](results/figures/{f.name})\n")
+    out.append("#### Every setting against its own zero-shot model\n")
+    out.append("Mean over seeds of (fine-tuned minus the zero-shot score of the same starting model). **beats** = at least +0.01 and positive in all 3 seeds; **below** = at least -0.01 and negative in all 3 seeds; "
+               "no tag = within noise. On the synthetic sets every setting beats zero-shot, which is expected because training and test degradations come from the same generator; the real sets are the honest test.\n")
+    cols = ["clean_bench1k", "exdark_all", "dawn_fog", "bdd_clear_day", "bdd_night_clear", "low_light_s3", "rain_s3"]
+    out.append("| Setting | " + " | ".join(SETLABEL[c] for c in cols) + " |")
+    out.append("|---|" + "---|" * len(cols))
+    own = {"m_11s": "yolo11s", "m_26n": "yolo26n"}
+    seen = set()
+    for g, (_, levels, _) in GROUPS.items():
+        for lv, st in levels:
+            if st not in runs or st in seen:
+                continue
+            seen.add(st)
+            ref = b0[own.get(st, "yolo11n")]
+            cells = []
+            for c in cols:
+                d = [ap(runs[st][i], c) - ap(ref, c) for i in sorted(runs[st]) if c in runs[st][i]]
+                m = float(np.mean(d)) if d else float("nan")
+                full = len(d) == 3
+                tag = " **beats**" if full and m >= 0.01 and all(x > 0 for x in d) else (" below" if full and m <= -0.01 and all(x < 0 for x in d) else "")
+                cells.append(f"{m:+.3f}{tag}")
+            out.append(f"| {st} | " + " | ".join(cells) + " |")
+    out.append("")
     return "\n".join(out) + "\n", figs
 
 
