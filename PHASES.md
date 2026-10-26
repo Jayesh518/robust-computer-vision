@@ -11,7 +11,7 @@ Standard shape: see the workspace `docs/phases.md`. Status date: 2026-10-24.
 | 4. Intervention (B1, A1, A2) | Clean fine-tune control, condition-aware augmentation, plus BDD100K adverse data; yolo11n, 10 epochs, 3 seeds each | **done** (first recipe) |
 | 5. Diagnosis and iteration | Explain why the clean fine-tune scores below zero-shot: no-learning (D0), no-augmentation (D3), lower learning rate (D1), frozen backbone (D2), batch-norm lock (D4, D5) | **done, closed (5a-5d)**; gate met in part: the procedural loss (about 0.01) is explained by batch-norm statistics drift and removed by locking them (D5); the loss from learning on the clean subset is not removed by any recipe tried; more data and the 9-class label restriction are untested |
 | 6. Extension (E1) | Classical enhancement preprocessing (CLAHE and adaptive gamma for low light, dark-channel-prior dehazing for fog, non-local-means for noise) before the zero-shot model, accuracy gain against added latency | **done**: dehazing helps on fog, the low-light methods do not (see README) |
-| 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | **next** |
+| 7. Report and release | Report, failure gallery from the author's own photographs, model card, weights trained only on COCO and BDD data, two-page summary | **paused by the author (2026-10-26)**; resume here |
 | 8. Fine-tuning study | One-at-a-time sweep of learning rate and schedule, epochs, training-data size, frozen layers and starting model, 3 seeds each, to learn what each variable does | **done**: 45 runs; no setting reliably beats the pretrained model on real photographs (see README) |
 
 ## Gate for phase 5 (what must be true to close it)
@@ -91,3 +91,8 @@ Rule applied as written. Dark-channel dehazing **helps on fog**: synthetic +0.08
 
 ### Phase 8 outcome (2026-10-26)
 45 runs (15 settings x 3 seeds), baseline replicate agreed with the earlier A1 runs. Hypotheses: H1 supported in direction (clean gap to zero-shot -0.038 at 2k to -0.019 at 30k, not closed); H2 supported for freezing but not for a lower learning rate; H3 supported against yolo11n except on the 50 %-hidden set; H4 supported. Main result: of 60 setting-by-real-set comparisons with the setting's own zero-shot model only 2 beat it (30k images and yolo26n, both on the 117-person DAWN fog set); fine-tuned yolo11s ended below its own zero-shot on every real set; a frozen backbone kept real-photo accuracy but lost the synthetic gain. Training cost: 6 min (2k images) to 121 min (yolo11s). Phase 7 (report, failure gallery from the author's own photographs, model card, release, two-page summary) is next.
+
+## Project status (2026-10-26): paused after phase 8
+Phases 0 to 6 and 8 are done; phase 7 (report, failure gallery from the author's own photographs, model card, release of COCO/BDD-trained weights, two-page summary) was deliberately left for later. The live webcam demo (`demo/`) was verified on a still image; the camera part is for the author to try.
+**To resume:** write `docs/report.md` from the README results, collect failure photographs (low light, fog, partly hidden people) with the demo, write the model card, and decide the weights release under the policy in `data/README.md` (weights trained only on COCO and BDD data; never ExDark or DAWN). Nothing is running.
+**Detector for Project 3:** the pretrained yolo11s used off the shelf (no fine-tuned model beat it on real photographs), validated on the rover's own camera first.

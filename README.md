@@ -1,6 +1,6 @@
 # Robust Computer Vision Under Difficult Conditions
 
-**Status: In progress.** Zero-shot baselines (B0) are complete for three models on synthetic and real test sets, with confidence intervals. Three fine-tuned variants (clean control, condition-aware augmentation, plus BDD100K adverse data) are trained and evaluated over 3 seeds on yolo11n. Classical enhancement preprocessing (E1) is also evaluated: it helps on fog, not on low light. A fine-tuning study (Phase 8: 15 settings x 3 seeds, one variable at a time) is complete; the report, failure gallery and release (Phase 7) are still to come.
+**Status: In progress, paused after the fine-tuning study.** Zero-shot baselines (B0) are complete for three models on synthetic and real test sets, with confidence intervals. Three fine-tuned variants (clean control, condition-aware augmentation, plus BDD100K adverse data) are trained and evaluated over 3 seeds on yolo11n. Classical enhancement preprocessing (E1) is also evaluated: it helps on fog, not on low light. A fine-tuning study (Phase 8: 15 settings x 3 seeds, one variable at a time) is complete; the report, failure gallery and release (Phase 7) are still to come.
 
 How much does a pretrained YOLO detector degrade on **people** (primary) and animals (secondary) in low light, fog, rain, snow, motion blur, noise and partial occlusion, and which cheap intervention (fine-tuning, condition-aware augmentation, enhancement preprocessing) recovers the most accuracy per millisecond of latency?
 
